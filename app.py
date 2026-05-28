@@ -2,7 +2,6 @@ from flask import Flask
 from routes.main_routes import main_bp
 from routes.risk_routes import risk_bp
 
-
 def create_app():
     app = Flask(__name__)
 
