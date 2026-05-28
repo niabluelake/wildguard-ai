@@ -3,18 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <title>WildGuard AI</title>
-    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <main class="container">
-        <h1>WildGuard AI</h1>
-        <p>야생동물 출현 기록 기반 위험 예측 및 대응 지원 서비스</p>
+    <h1>WildGuard AI</h1>
 
-        <section class="card">
-            <h2>1차 프로젝트</h2>
-            <p>서울시 생물종 출현 데이터를 활용한 지역별 야생동물 주의도 예측</p>
-            <a href="/risk/">주의도 예측하기</a>
-        </section>
-    </main>
+    <p>
+        AI Hub 야생동물 라벨링 데이터를 활용하여
+        야생동물 출현 위험도 예측, 이미지 탐지, 대응 상담을 제공하는 AI 서비스입니다.
+    </p>
+
+    <hr>
+
+    <h2>프로젝트 기능</h2>
+
+    <ul>
+        <li>
+            <strong>1차 ML</strong>:
+            AI Hub JSON 메타데이터 기반 야생동물 출현 위험도 예측
+        </li>
+        <li>
+            <strong>2차 Vision</strong>:
+            YOLO 기반 사족보행 야생동물 이미지 탐지
+        </li>
+        <li>
+            <strong>3차 LLM</strong>:
+            위험도와 탐지 결과 기반 대응 상담
+        </li>
+        <li>
+            <strong>4차 SLM</strong>:
+            현장용 경량 야생동물 대응 상담
+        </li>
+    </ul>
+
+    <hr>
+
+    <h2>서비스 이동</h2>
+
+    <a href="/risk">
+        <button>위험도 예측하기</button>
+    </a>
 </body>
 </html>
