@@ -2,44 +2,102 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>야생동물 주의도 예측</title>
-    <link rel="stylesheet" href="/static/css/style.css">
+    <title>WildGuard AI - 위험도 예측</title>
 </head>
 <body>
-    <main class="container">
-        <h1>야생동물 주의도 예측</h1>
-        <p>생물종, 서식지, 출현년도를 입력해 주의도를 확인합니다.</p>
+    <h1>WildGuard AI 위험도 예측</h1>
 
-        <form method="POST" class="card">
-            <label>생물종명</label>
-            <input type="text" name="species_name" placeholder="예: 멧돼지">
+    <form id="riskForm">
+        <label>주야간</label>
+        <select name="day">
+            <option value="day">day</option>
+            <option value="night" selected>night</option>
+        </select>
+        <br><br>
 
-            <label>서식지명</label>
-            <input type="text" name="habitat_name" placeholder="예: 북한산">
+        <label>카메라 타입</label>
+        <select name="camera_type">
+            <option value="RGB">RGB</option>
+            <option value="IR" selected>IR</option>
+        </select>
+        <br><br>
 
-            <label>세부 지역명</label>
-            <input type="text" name="area_name" placeholder="예: 강북구">
+        <label>날씨</label>
+        <input type="text" name="weather" value="cloudy">
+        <br><br>
 
-            <label>출현년도</label>
-            <input type="number" name="year" placeholder="예: 2020">
+        <label>위치</label>
+        <input type="text" name="location" value="대산농원">
+        <br><br>
 
-            <button type="submit">예측하기</button>
-        </form>
+        <label>시간대</label>
+        <select name="time_zone">
+            <option value="dawn">dawn</option>
+            <option value="day">day</option>
+            <option value="evening">evening</option>
+            <option value="night" selected>night</option>
+        </select>
+        <br><br>
 
-        {% if result %}
-        <section class="card result">
-            <h2>예측 결과</h2>
-            <p><strong>생물종:</strong> {{ result.species_name }}</p>
-            <p><strong>서식지:</strong> {{ result.habitat_name }}</p>
-            <p><strong>지역:</strong> {{ result.area_name }}</p>
-            <p><strong>출현년도:</strong> {{ result.year }}</p>
-            <p><strong>주의도:</strong> {{ result.risk_level }}</p>
-            <p><strong>점수:</strong> {{ result.score }}</p>
-            <p><strong>설명:</strong> {{ result.message }}</p>
-        </section>
-        {% endif %}
+        <label>계절</label>
+        <select name="season">
+            <option value="spring">spring</option>
+            <option value="summer">summer</option>
+            <option value="fall" selected>fall</option>
+            <option value="winter">winter</option>
+        </select>
+        <br><br>
 
-        <p><a href="/">메인으로 돌아가기</a></p>
-    </main>
+        <label>객체 수</label>
+        <input type="number" name="object_count" value="2">
+        <br><br>
+
+        <label>최대 bbox 면적 비율</label>
+        <input type="number" step="0.0001" name="max_bbox_area_ratio" value="0.0235">
+        <br><br>
+
+        <label>평균 bbox 면적 비율</label>
+        <input type="number" step="0.0001" name="avg_bbox_area_ratio" value="0.0206">
+        <br><br>
+
+        <button type="submit">위험도 예측</button>
+    </form>
+
+    <hr>
+
+    <h2>예측 결과</h2>
+    <pre id="result">아직 예측하지 않았습니다.</pre>
+
+    <script>
+        document.getElementById("riskForm").addEventListener("submit", async function (event) {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+
+            const data = {
+                day: formData.get("day"),
+                camera_type: formData.get("camera_type"),
+                weather: formData.get("weather"),
+                location: formData.get("location"),
+                time_zone: formData.get("time_zone"),
+                season: formData.get("season"),
+                object_count: Number(formData.get("object_count")),
+                max_bbox_area_ratio: Number(formData.get("max_bbox_area_ratio")),
+                avg_bbox_area_ratio: Number(formData.get("avg_bbox_area_ratio"))
+            };
+
+            const response = await fetch("/api/risk/predict", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            document.getElementById("result").textContent = JSON.stringify(result, null, 2);
+        });
+    </script>
 </body>
 </html>
