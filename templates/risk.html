@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>야생동물 주의도 예측</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <main class="container">
+        <h1>야생동물 주의도 예측</h1>
+        <p>생물종, 서식지, 출현년도를 입력해 주의도를 확인합니다.</p>
+
+        <form method="POST" class="card">
+            <label>생물종명</label>
+            <input type="text" name="species_name" placeholder="예: 멧돼지">
+
+            <label>서식지명</label>
+            <input type="text" name="habitat_name" placeholder="예: 북한산">
+
+            <label>세부 지역명</label>
+            <input type="text" name="area_name" placeholder="예: 강북구">
+
+            <label>출현년도</label>
+            <input type="number" name="year" placeholder="예: 2020">
+
+            <button type="submit">예측하기</button>
+        </form>
+
+        {% if result %}
+        <section class="card result">
+            <h2>예측 결과</h2>
+            <p><strong>생물종:</strong> {{ result.species_name }}</p>
+            <p><strong>서식지:</strong> {{ result.habitat_name }}</p>
+            <p><strong>지역:</strong> {{ result.area_name }}</p>
+            <p><strong>출현년도:</strong> {{ result.year }}</p>
+            <p><strong>주의도:</strong> {{ result.risk_level }}</p>
+            <p><strong>점수:</strong> {{ result.score }}</p>
+            <p><strong>설명:</strong> {{ result.message }}</p>
+        </section>
+        {% endif %}
+
+        <p><a href="/">메인으로 돌아가기</a></p>
+    </main>
+</body>
+</html>
