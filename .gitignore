@@ -6,3 +6,7 @@ data/raw/
 data/processed/ 
 static/uploads/ 
 static/outputs/ 
+data/aihub_json/
+data/ml_dataset/
+aihub_json/
+data/aihub/ml_dataset/
