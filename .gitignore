@@ -12,4 +12,5 @@ aihub_json/
 data/aihub/ml_dataset/
 *.pkl
 *.joblib
-models/ml/
+models/ml/.idea/ 
+.idea/
