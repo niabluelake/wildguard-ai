@@ -24,14 +24,68 @@ WildGuard AI는 하나의 야생동물 데이터셋을 기반으로 1차부터 4
 | 위험도 라벨 생성 | 완료 |
 | 위험도 분포 조정 | 완료 |
 | RandomForest 위험도 예측 모델 학습 | 완료 |
-| Flask 위험도 예측 API 연결 | 진행 |
-| 위험도 예측 웹 화면 | 진행 |
+| Flask 위험도 예측 API 연결 | 완료 |
+| 위험도 예측 웹 화면 구현 | 완료 |
+| 위험도 예측 UI 한국어화 | 완료 |
+| 1차 ML MVP | 완료 |
 | YOLO 라벨 변환 | 예정 |
+| YOLO 객체 탐지 API | 예정 |
 | LLM 상담 기능 | 예정 |
 | Oracle DB 연동 | 예정 |
 
 ## 1차 ML 프로젝트
 
+### 1차 MVP 완료 상태
+
+현재 1차 ML 프로젝트는 다음 흐름까지 구현 완료되었습니다.
+
+```text
+AI Hub 라벨링 JSON
+→ 정형 CSV 변환
+→ risk_level 생성
+→ RandomForest 위험도 예측 모델 학습
+→ Flask API 연결
+→ 웹 화면에서 위험도 예측
+
+구현된 주요 파일은 다음과 같습니다.
+
+구분	파일
+JSON 전처리	scripts/convert_aihub_metadata.py
+모델 학습	scripts/train_risk_model.py
+위험도 예측 서비스	services/risk_prediction_service.py
+위험도 예측 API	routes/risk_routes.py
+위험도 예측 화면 라우트	routes/risk_page_routes.py
+위험도 예측 화면	templates/risk.html
+메인 화면	templates/index.html
+
+위험도 예측 화면은 한국어 UI로 구성되어 있으며, 내부 모델 입력값은 학습 데이터와 동일하게 영어 코드값을 유지합니다.
+
+
+---
+
+## 4. API 섹션 응답 예시도 최신화
+
+README에 응답 예시가 있으면 `risk_level`이 `high`로 나오는 현재 기준에 맞춰 이렇게 바꿔.
+
+```json
+{
+  "success": true,
+  "result": {
+    "risk_level": "high",
+    "message": "위험도가 높습니다. 야생동물에게 접근하지 말고 안전한 장소로 이동한 뒤 필요 시 관계 기관에 신고하세요.",
+    "input": {
+      "day": "night",
+      "camera_type": "IR",
+      "weather": "cloudy",
+      "location": "대산농원",
+      "time_zone": "night",
+      "season": "fall",
+      "object_count": 2,
+      "max_bbox_area_ratio": 0.0235,
+      "avg_bbox_area_ratio": 0.0206
+    }
+  }
+}
 ### 목표
 
 AI Hub 야생동물 라벨링 JSON에서 이미지 메타데이터와 annotation 정보를 추출하여 정형 데이터셋을 만들고, 야생동물 출현 상황의 위험도를 예측합니다.
