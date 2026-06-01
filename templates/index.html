@@ -3,44 +3,246 @@
 <head>
     <meta charset="UTF-8">
     <title>WildGuard AI</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
-    <h1>WildGuard AI</h1>
 
-    <p>
-        AI Hub 야생동물 라벨링 데이터를 활용하여
-        야생동물 출현 위험도 예측, 이미지 탐지, 대응 상담을 제공하는 AI 서비스입니다.
-    </p>
+<body class="bg-light">
 
-    <hr>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/">WildGuard AI</a>
 
-    <h2>프로젝트 기능</h2>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
 
-    <ul>
-        <li>
-            <strong>1차 ML</strong>:
-            AI Hub JSON 메타데이터 기반 야생동물 출현 위험도 예측
-        </li>
-        <li>
-            <strong>2차 Vision</strong>:
-            YOLO 기반 사족보행 야생동물 이미지 탐지
-        </li>
-        <li>
-            <strong>3차 LLM</strong>:
-            위험도와 탐지 결과 기반 대응 상담
-        </li>
-        <li>
-            <strong>4차 SLM</strong>:
-            현장용 경량 야생동물 대응 상담
-        </li>
-    </ul>
+        <div class="collapse navbar-collapse" id="mainNavbar">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link active" href="/">홈</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/risk">위험도 예측</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link disabled" href="#">이미지 탐지 예정</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link disabled" href="#">상담 챗봇 예정</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
 
-    <hr>
+<header>
+    <div id="mainCarousel" class="carousel slide" data-bs-ride="carousel">
+        <div class="carousel-indicators">
+            <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="0" class="active"></button>
+            <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="1"></button>
+            <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="2"></button>
+        </div>
 
-    <h2>서비스 이동</h2>
+        <div class="carousel-inner">
+            <div class="carousel-item active">
+                <div class="bg-dark text-white d-flex align-items-center" style="height: 420px;">
+                    <div class="container">
+                        <h1 class="display-4 fw-bold">WildGuard AI</h1>
+                        <p class="lead mt-3">
+                            AI Hub 야생동물 라벨링 데이터를 활용한 야생동물 출현 위험도 예측 서비스
+                        </p>
+                        <a href="/risk" class="btn btn-primary btn-lg mt-3">위험도 예측하기</a>
+                    </div>
+                </div>
+            </div>
 
-    <a href="/risk">
-        <button>위험도 예측하기</button>
-    </a>
+            <div class="carousel-item">
+                <div class="bg-success text-white d-flex align-items-center" style="height: 420px;">
+                    <div class="container">
+                        <h1 class="display-5 fw-bold">정형 데이터 기반 위험도 예측</h1>
+                        <p class="lead mt-3">
+                            촬영 시간, 날씨, 위치, 객체 수, bbox 면적 비율을 활용하여 위험도를 분석합니다.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="carousel-item">
+                <div class="bg-secondary text-white d-flex align-items-center" style="height: 420px;">
+                    <div class="container">
+                        <h1 class="display-5 fw-bold">이미지 탐지와 대응 상담 서비스</h1>
+                        <p class="lead mt-3">
+                            이미지 기반 출현 탐지와 상황별 대응 안내까지 서비스 범위를 확장합니다.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon"></span>
+        </button>
+
+        <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon"></span>
+        </button>
+    </div>
+</header>
+
+<main class="container my-5">
+
+    <section class="mb-5 text-center">
+        <h2 class="fw-bold">야생동물 출현 위험 예측 및 대응 지원 AI 서비스</h2>
+        <p class="text-muted mt-3">
+            WildGuard AI는 농장주, 산림관리원, 지자체 담당자, 일반 사용자를 위한
+            야생동물 출현 위험 분석 서비스입니다.
+        </p>
+    </section>
+
+    <section class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold">위험도 예측</h5>
+                    <p class="card-text">
+                        AI Hub JSON 메타데이터를 CSV로 변환하고 위험도를 예측합니다.
+                    </p>
+                    <span class="badge bg-success">이용 가능</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold">이미지 탐지</h5>
+                    <p class="card-text">
+                        YOLO 기반으로 사족보행 야생동물을 이미지에서 탐지합니다.
+                    </p>
+                    <span class="badge bg-warning text-dark">준비 중</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold">대응 상담</h5>
+                    <p class="card-text">
+                        위험도와 탐지 결과를 바탕으로 대응 방법을 상담합니다.
+                    </p>
+                    <span class="badge bg-warning text-dark">준비 중</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold">현장 대응 안내</h5>
+                    <p class="card-text">
+                        현장용 경량 상담 모델로 빠른 대응 안내를 제공합니다.
+                    </p>
+                    <span class="badge bg-warning text-dark">준비 중</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="card shadow-sm mb-5">
+        <div class="card-body p-4">
+            <h3 class="fw-bold">현재 구현된 기능</h3>
+            <hr>
+            <ul class="mb-0">
+                <li>AI Hub 라벨링 JSON 30,700개 메타데이터 변환</li>
+                <li>객체 수, bbox 면적 비율, 시간대를 활용한 위험도 라벨 생성</li>
+                <li>RandomForest 기반 low / medium / high 위험도 예측 모델 학습</li>
+                <li>Flask API와 웹 화면을 통한 위험도 예측</li>
+                <li>한국어 기반 사용자 입력 화면 제공</li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="text-center">
+        <h3 class="fw-bold mb-3">지금 위험도를 예측해보세요</h3>
+        <p class="text-muted">
+            야생동물 출현 상황 정보를 입력하면 현재 위험도를 예측합니다.
+        </p>
+        <a href="/risk" class="btn btn-primary btn-lg">위험도 예측 화면으로 이동</a>
+    </section>
+
+</main>
+
+<footer class="bg-dark text-white mt-5 pt-5 pb-3">
+    <div class="container">
+        <div class="row g-4">
+
+            <div class="col-md-4">
+                <h5 class="fw-bold">WildGuard AI</h5>
+                <p class="text-secondary">
+                    AI Hub 야생동물 라벨링 데이터를 활용하여
+                    야생동물 출현 위험도 예측, 이미지 탐지, 대응 상담을 제공하는
+                    AI 기반 위험 대응 지원 서비스입니다.
+                </p>
+            </div>
+
+            <div class="col-md-4">
+                <h5 class="fw-bold">프로젝트 서비스</h5>
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <a href="/risk" class="text-decoration-none text-light">
+                            야생동물 출현 위험도 예측
+                        </a>
+                    </li>
+                    <li class="mb-2">
+                        <span class="text-secondary">
+                            야생동물 이미지 탐지
+                            <span class="badge bg-warning text-dark ms-1">준비 중</span>
+                        </span>
+                    </li>
+                    <li class="mb-2">
+                        <span class="text-secondary">
+                            야생동물 대응 상담
+                            <span class="badge bg-warning text-dark ms-1">준비 중</span>
+                        </span>
+                    </li>
+                    <li class="mb-2">
+                        <span class="text-secondary">
+                            현장용 경량 대응 안내
+                            <span class="badge bg-warning text-dark ms-1">준비 중</span>
+                        </span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="col-md-4">
+                <h5 class="fw-bold">프로젝트 정보</h5>
+                <ul class="list-unstyled text-secondary">
+                    <li class="mb-2">데이터: AI Hub 야생동물 라벨링 JSON</li>
+                    <li class="mb-2">Backend: Flask</li>
+                    <li class="mb-2">예측 모델: RandomForestClassifier</li>
+                    <li class="mb-2">이미지 탐지: YOLO 준비 중</li>
+                    <li class="mb-2">DB: Oracle DB 예정</li>
+                </ul>
+            </div>
+
+        </div>
+
+        <hr class="border-secondary my-4">
+
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
+            <small class="text-secondary">
+                © 2026 WildGuard AI. Wildlife Risk Prediction & Response Support Service.
+            </small>
+            <small class="text-secondary">
+                위험도 예측 이용 가능 · 이미지 탐지 준비 중 · 대응 상담 준비 중 · 현장 대응 안내 준비 중
+            </small>
+        </div>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>
