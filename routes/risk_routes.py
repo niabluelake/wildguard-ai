@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request, render_template
 
+from services.risk_log_service import save_risk_prediction_log
 from services.risk_prediction_service import predict_risk
 
 
@@ -9,20 +10,18 @@ risk_bp = Blueprint("risk", __name__, url_prefix="/api/risk")
 @risk_bp.route("/predict", methods=["POST"])
 def predict():
     try:
-        data = request.get_json()
+        input_data = request.get_json()
 
-        if data is None:
+        if input_data is None:
             return jsonify({
                 "success": False,
                 "message": "JSON 요청 데이터가 없습니다.",
             }), 400
 
-        result = predict_risk(data)
+        result = predict_risk(input_data)
+        save_risk_prediction_log(input_data, result)
 
-        return jsonify({
-            "success": True,
-            "result": result,
-        })
+        return jsonify(result)
 
     except ValueError as error:
         return jsonify({
