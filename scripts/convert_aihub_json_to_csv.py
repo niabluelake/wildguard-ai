@@ -6,20 +6,10 @@ import pandas as pd
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 
+# 집/학원 공통 프로젝트 구조
 JSON_DIR = BASE_DIR / "data" / "aihub" / "aihub_json" / "TL-quadruped"
 OUTPUT_DIR = BASE_DIR / "data" / "aihub" / "ml_dataset"
 OUTPUT_PATH = OUTPUT_DIR / "aihub_wildlife_metadata.csv"
-
-
-def safe_get(data, *keys, default=None):
-    current = data
-
-    for key in keys:
-        if not isinstance(current, dict):
-            return default
-        current = current.get(key)
-
-    return current if current is not None else default
 
 
 def first_dict(value):
@@ -89,7 +79,7 @@ def normalize_species(value):
 
     value = str(value)
 
-    if "boar" in value.lower() or "멧돼지" in value:
+    if "boar" in value.lower() or "scrofa" in value.lower() or "멧돼지" in value:
         return "멧돼지"
     if "water deer" in value.lower() or "고라니" in value:
         return "고라니"
@@ -103,7 +93,6 @@ def normalize_species(value):
 
 def get_bbox_area_ratio(annotation, image_width, image_height):
     bbox = annotation.get("bbox") or []
-
     bbox_area = 0
 
     # AI Hub 구조: [[x1, y1], [x2, y2]]
@@ -124,6 +113,7 @@ def get_bbox_area_ratio(annotation, image_width, image_height):
         x, y, w, h = bbox[:4]
         bbox_area = float(w) * float(h)
 
+    # dict 구조 대응
     elif isinstance(bbox, dict):
         if all(k in bbox for k in ["x", "y", "w", "h"]):
             bbox_area = float(bbox["w"]) * float(bbox["h"])
@@ -162,23 +152,40 @@ def make_risk_level(row):
     return "low"
 
 
+def parse_datetime_parts(image_info):
+    date_created = image_info.get("date_created") or ""
+    time_value = image_info.get("time") or ""
+
+    hour = None
+    month = None
+
+    # 예: "2021.10.26 20:22:20"
+    if isinstance(date_created, str) and " " in date_created:
+        date_part, time_part = date_created.split(" ", 1)
+
+        date_parts = date_part.replace("-", ".").replace("/", ".").split(".")
+        if len(date_parts) >= 2:
+            month = date_parts[1]
+
+        if ":" in time_part:
+            hour = time_part.split(":")[0]
+
+    # 보조: time 값 예: "000001.682"
+    if hour is None and isinstance(time_value, str):
+        if ":" in time_value:
+            hour = time_value.split(":")[0]
+        elif len(time_value) >= 2 and time_value[:2].isdigit():
+            hour = time_value[:2]
+
+    return hour, month
+
+
 def parse_json_file(json_path):
     with open(json_path, "r", encoding="utf-8") as file:
         data = json.load(file)
 
-    image_info = first_dict(
-        data.get("image")
-        or data.get("images")
-        or data.get("image_info")
-        or {}
-    )
-
-    meta = first_dict(
-        data.get("metadata")
-        or data.get("meta")
-        or data.get("info")
-        or {}
-    )
+    image_info = first_dict(data.get("images") or data.get("image") or data.get("image_info"))
+    meta = first_dict(data.get("metadata") or data.get("meta") or data.get("info"))
 
     annotations = (
         data.get("annotations")
@@ -198,18 +205,8 @@ def parse_json_file(json_path):
 
     annotations = as_list(annotations)
 
-    image_width = (
-        image_info.get("width")
-        or meta.get("width")
-        or safe_get(data, "image", "width")
-        or 1920
-    )
-    image_height = (
-        image_info.get("height")
-        or meta.get("height")
-        or safe_get(data, "image", "height")
-        or 1080
-    )
+    image_width = image_info.get("width") or meta.get("width") or 1920
+    image_height = image_info.get("height") or meta.get("height") or 1080
 
     file_name = (
         image_info.get("file_name")
@@ -218,19 +215,8 @@ def parse_json_file(json_path):
         or json_path.stem
     )
 
-    day = (
-        image_info.get("day")
-        or meta.get("day")
-        or data.get("day")
-        or "unknown"
-    )
-
-    weather = (
-        image_info.get("weather")
-        or meta.get("weather")
-        or data.get("weather")
-        or "unknown"
-    )
+    day = image_info.get("day") or meta.get("day") or data.get("day") or "unknown"
+    weather = image_info.get("weather") or meta.get("weather") or data.get("weather") or "unknown"
 
     camera_type = (
         image_info.get("type")
@@ -249,48 +235,7 @@ def parse_json_file(json_path):
         or "unknown"
     )
 
-    date_created = image_info.get("date_created") or ""
-
-    date_value = (
-        meta.get("date")
-        or data.get("date")
-        or image_info.get("date")
-        or date_created
-        or ""
-    )
-
-    time_value = (
-        image_info.get("time")
-        or meta.get("time")
-        or data.get("time")
-        or ""
-    )
-
-    hour = None
-    month = None
-
-    # date_created 예: "2021.10.26 20:22:20"
-    if isinstance(date_created, str) and " " in date_created:
-        date_part, time_part = date_created.split(" ", 1)
-
-        date_parts = date_part.replace("-", ".").replace("/", ".").split(".")
-        if len(date_parts) >= 2:
-            month = date_parts[1]
-
-        if ":" in time_part:
-            hour = time_part.split(":")[0]
-
-    # date_created가 없으면 파일명/기존 time에서 보조 추출
-    if hour is None and isinstance(time_value, str):
-        if ":" in time_value:
-            hour = time_value.split(":")[0]
-        elif len(time_value) >= 2 and time_value[:2].isdigit():
-            hour = time_value[:2]
-
-    if month is None and isinstance(date_value, str):
-        parts = date_value.replace("-", ".").replace("/", ".").split(".")
-        if len(parts) >= 2:
-            month = parts[1]
+    hour, month = parse_datetime_parts(image_info)
 
     bbox_ratios = []
     species_list = []
@@ -301,15 +246,15 @@ def parse_json_file(json_path):
 
         species = (
             annotation.get("species")
-            or annotation.get("class")
+            or annotation.get("category_name")
             or annotation.get("class_name")
             or annotation.get("label")
             or annotation.get("name")
             or data.get("species")
             or "unknown"
         )
-        species_list.append(normalize_species(species))
 
+        species_list.append(normalize_species(species))
         bbox_ratios.append(get_bbox_area_ratio(annotation, image_width, image_height))
 
     object_count = len(bbox_ratios)
@@ -323,7 +268,6 @@ def parse_json_file(json_path):
         "camera_type": str(camera_type),
         "weather": str(weather),
         "location": str(location),
-        "time": str(time_value),
         "time_zone": get_time_zone(hour),
         "season": get_season(month),
         "species": species_list[0] if species_list else "unknown",
