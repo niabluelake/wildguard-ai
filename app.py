@@ -1,5 +1,7 @@
 from flask import Flask
+from routes.auth_routes import auth_bp
 from routes.main_routes import main_bp
+from routes.risk_history_routes import risk_history_bp
 from routes.risk_routes import risk_bp
 from routes.risk_page_routes import risk_page_bp
 
@@ -8,10 +10,13 @@ def create_app():
     app = Flask(__name__)
 
     app.json.ensure_ascii = False
+    app.secret_key = "wildguard-dev-secret-key"
 
+    app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
     app.register_blueprint(risk_bp)
     app.register_blueprint(risk_page_bp)
+    app.register_blueprint(risk_history_bp)
 
     return app
 

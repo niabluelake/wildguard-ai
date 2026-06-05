@@ -1,4 +1,4 @@
-# WildGuard AI GitHub 정리 가이드
+  # WildGuard AI GitHub 정리 가이드
 
 > 목적: 집 PC와 학원 PC를 오가며 WildGuard AI 프로젝트를 안전하게 동기화하기 위한 GitHub 사용 규칙 정리
 

@@ -1,3 +1,5 @@
+> 문서 업데이트: 회원가입/로그인, 비회원 체험 모드, 로그인 사용자 DB 저장 정책을 추가 반영함.
+
 # WildGuard AI 기능명세서
 
 ## 1. 문서 개요
@@ -341,3 +343,206 @@ POST /api/chat
 
 ### 필요 이유
 야생동물 출현은 반복 기록 관리가 중요하므로, 결과 저장과 조회는 서비스 완성도를 높인다.
+
+
+---
+
+## 23. 인증 및 회원 기반 예측 저장 기능 추가 명세
+
+### F-020 회원가입
+
+#### URL
+```http
+GET /auth/register
+POST /auth/register
+```
+
+#### 입력 항목
+| 항목 | 설명 |
+|---|---|
+| username | 로그인 아이디 |
+| password | 비밀번호 |
+| password_confirm | 비밀번호 확인 |
+| name | 사용자 이름 |
+| organization | 소속 기관/단체 |
+| role | 사용자 유형 |
+
+#### 처리 절차
+1. 필수 입력값을 검증한다.
+2. 비밀번호와 비밀번호 확인 값이 같은지 확인한다.
+3. 비밀번호를 해시 처리한다.
+4. `USERS` 테이블에 사용자 정보를 저장한다.
+5. 회원가입 성공 후 로그인 페이지로 이동한다.
+
+---
+
+### F-021 로그인
+
+#### URL
+```http
+GET /auth/login
+POST /auth/login
+```
+
+#### 입력 항목
+| 항목 | 설명 |
+|---|---|
+| username | 로그인 아이디 |
+| password | 비밀번호 |
+
+#### 처리 절차
+1. `username`으로 사용자를 조회한다.
+2. 입력 비밀번호와 저장된 `password_hash`를 검증한다.
+3. 성공 시 Flask session에 사용자 정보를 저장한다.
+4. 위험도 예측 화면으로 이동한다.
+
+#### 세션 저장 값
+```text
+user_id
+username
+name
+role
+```
+
+---
+
+### F-022 로그아웃
+
+#### URL
+```http
+GET /auth/logout
+```
+
+#### 처리 절차
+1. session을 초기화한다.
+2. 메인 화면 또는 위험도 예측 화면으로 이동한다.
+
+---
+
+### F-023 비회원 예측 체험
+
+#### 기능 설명
+로그인하지 않은 사용자가 위험도 예측을 체험할 수 있다.
+
+#### 정책
+| 항목 | 정책 |
+|---|---|
+| `/risk` 접근 | 허용 |
+| 예측 실행 | 허용 |
+| 결과 출력 | 허용 |
+| Oracle DB 저장 | 저장 안 함 |
+| 기록 조회 | 로그인 필요 |
+
+#### 화면 안내
+```text
+비회원 체험 모드입니다. 예측은 가능하지만 기록은 저장되지 않습니다. 로그인하면 예측 기록을 저장할 수 있습니다.
+```
+
+---
+
+### F-024 로그인 사용자 예측 저장
+
+#### 기능 설명
+로그인 사용자가 위험도 예측을 실행하면 예측 결과를 Oracle DB에 저장한다.
+
+#### 저장 조건
+```python
+if "user_id" in session:
+    save_risk_prediction_log(...)
+else:
+    saved_to_db = False
+```
+
+#### 저장 테이블
+```text
+risk_prediction_log
+```
+
+#### 저장 컬럼
+| 컬럼 | 설명 |
+|---|---|
+| user_id | 로그인 사용자 ID |
+| day | 주야간 |
+| camera_type | 카메라 유형 |
+| weather | 날씨 |
+| location | 위치 |
+| time_zone | 시간대 |
+| season | 계절 |
+| object_count | 객체 수 |
+| max_bbox_area_ratio | 최대 bbox 면적 비율 |
+| avg_bbox_area_ratio | 평균 bbox 면적 비율 |
+| risk_level | 예측 위험도 |
+| risk_message | 대응 메시지 |
+| created_at | 생성일 |
+
+---
+
+### F-025 예측 기록 조회
+
+#### URL
+```http
+GET /risk/history
+```
+
+#### 기능 설명
+로그인 사용자가 본인의 예측 기록을 조회한다.
+
+#### 접근 정책
+| 사용자 상태 | 처리 |
+|---|---|
+| 비로그인 | 로그인 페이지로 이동 |
+| 로그인 | 본인 예측 기록 조회 |
+| admin/official | 전체 기록 조회 기능으로 확장 가능 |
+
+#### 출력 항목
+날짜, 위치, 날씨, 시간대, 계절, 객체 수, bbox 비율, 위험도, 대응 메시지
+
+---
+
+### F-026 관리자 전체 예측 기록 조회
+
+#### URL
+```http
+GET /admin/risk/logs
+```
+
+#### 기능 설명
+관리자 또는 지자체 담당자가 전체 예측 기록을 조회한다.
+
+#### 접근 권한
+```text
+admin
+official
+```
+
+#### 현재 상태
+MVP 이후 확장 기능으로 설계한다.
+
+---
+
+## 24. 추가 DB 구조
+
+### USERS
+| 컬럼 | 타입 | 설명 |
+|---|---|---|
+| user_id | NUMBER | 사용자 ID |
+| username | VARCHAR2(50) | 로그인 아이디 |
+| password_hash | VARCHAR2(255) | 해시 처리된 비밀번호 |
+| name | VARCHAR2(50) | 사용자 이름 |
+| organization | VARCHAR2(100) | 소속 |
+| role | VARCHAR2(30) | 사용자 유형 |
+| created_at | DATE | 가입일 |
+
+### RISK_PREDICTION_LOG 변경
+| 컬럼 | 타입 | 설명 |
+|---|---|---|
+| user_id | NUMBER | 예측을 실행한 사용자 ID |
+
+### 사용자 유형
+| role | 설명 |
+|---|---|
+| citizen | 일반 사용자 |
+| farmer | 농장주 |
+| ranger | 산림관리원 |
+| official | 지자체 담당자 |
+| admin | 관리자 |
