@@ -18,18 +18,45 @@
         </button>
 
         <div class="collapse navbar-collapse" id="mainNavbar">
-            <ul class="navbar-nav ms-auto">
+            <ul class="navbar-nav ms-auto align-items-lg-center">
                 <li class="nav-item">
                     <a class="nav-link active" href="/">홈</a>
                 </li>
+
                 <li class="nav-item">
                     <a class="nav-link" href="/risk">위험도 예측</a>
                 </li>
+
+                {% if session.get("user_id") %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/risk/history">예측 기록</a>
+                    </li>
+                {% endif %}
+
                 <li class="nav-item">
                     <a class="nav-link disabled" href="#">이미지 탐지 예정</a>
                 </li>
+
                 <li class="nav-item">
                     <a class="nav-link disabled" href="#">상담 챗봇 예정</a>
+                </li>
+
+                <li class="nav-item ms-lg-3">
+                    {% if session.get("user_id") %}
+                        <span class="navbar-text text-light me-2">
+                            {{ session.get("name") }}님
+                        </span>
+                    {% else %}
+                        <a class="nav-link" href="/auth/login">로그인</a>
+                    {% endif %}
+                </li>
+
+                <li class="nav-item">
+                    {% if session.get("user_id") %}
+                        <a class="btn btn-outline-light btn-sm" href="/auth/logout">로그아웃</a>
+                    {% else %}
+                        <a class="btn btn-primary btn-sm" href="/auth/register">회원가입</a>
+                    {% endif %}
                 </li>
             </ul>
         </div>
@@ -52,7 +79,21 @@
                         <p class="lead mt-3">
                             AI Hub 야생동물 라벨링 데이터를 활용한 야생동물 출현 위험도 예측 서비스
                         </p>
-                        <a href="/risk" class="btn btn-primary btn-lg mt-3">위험도 예측하기</a>
+                        <div class="mt-4">
+                            <a href="/risk" class="btn btn-primary btn-lg me-2">
+                                위험도 예측하기
+                            </a>
+
+                            {% if not session.get("user_id") %}
+                                <a href="/auth/register" class="btn btn-outline-light btn-lg">
+                                    회원가입 후 기록 저장
+                                </a>
+                            {% else %}
+                                <a href="/risk/history" class="btn btn-outline-light btn-lg">
+                                    내 예측 기록 보기
+                                </a>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -99,7 +140,26 @@
             야생동물 출현 위험 분석 서비스입니다.
         </p>
     </section>
+    <section class="alert alert-primary shadow-sm mb-5">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+            <div>
+                <h5 class="fw-bold mb-1">회원 예측 기록 저장 기능 제공</h5>
+                <p class="mb-0">
+                    비회원은 위험도 예측을 체험할 수 있고, 로그인 사용자는 예측 결과를 Oracle DB에 저장하고 다시 조회할 수 있습니다.
+                </p>
+            </div>
 
+            {% if not session.get("user_id") %}
+                <a href="/auth/register" class="btn btn-primary mt-3 mt-md-0">
+                    회원가입
+                </a>
+            {% else %}
+                <a href="/risk/history" class="btn btn-primary mt-3 mt-md-0">
+                    예측 기록 보기
+                </a>
+            {% endif %}
+        </div>
+    </section>
     <section class="row g-4 mb-5">
         <div class="col-md-3">
             <div class="card h-100 shadow-sm">
@@ -109,6 +169,11 @@
                         AI Hub JSON 메타데이터를 CSV로 변환하고 위험도를 예측합니다.
                     </p>
                     <span class="badge bg-success">이용 가능</span>
+                    <div>
+                    <a href="/risk" class="btn btn-sm btn-outline-primary mt-3">
+                        예측 시작
+                    </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -152,15 +217,49 @@
 
     <section class="card shadow-sm mb-5">
         <div class="card-body p-4">
-            <h3 class="fw-bold">현재 구현된 기능</h3>
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+                <div>
+                    <h3 class="fw-bold mb-1">서비스 구현 현황</h3>
+                    <p class="text-muted mb-0">
+                        WildGuard AI 1차 MVP 기준 주요 기능 구현 상태입니다.
+                    </p>
+                </div>
+                <span class="badge bg-primary mt-3 mt-md-0">1차 MVP</span>
+            </div>
+
             <hr>
-            <ul class="mb-0">
-                <li>AI Hub 라벨링 JSON 30,700개 메타데이터 변환</li>
-                <li>객체 수, bbox 면적 비율, 시간대를 활용한 위험도 라벨 생성</li>
-                <li>RandomForest 기반 low / medium / high 위험도 예측 모델 학습</li>
-                <li>Flask API와 웹 화면을 통한 위험도 예측</li>
-                <li>한국어 기반 사용자 입력 화면 제공</li>
-            </ul>
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="border rounded p-3 h-100 bg-light">
+                        <h6 class="fw-bold">데이터 변환</h6>
+                        <p class="text-muted mb-2">
+                            AI Hub 라벨링 JSON 30,700개 메타데이터를 정형 CSV로 변환
+                        </p>
+                        <span class="badge bg-success">완료</span>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="border rounded p-3 h-100 bg-light">
+                        <h6 class="fw-bold">위험도 예측 모델</h6>
+                        <p class="text-muted mb-2">
+                            RandomForest 기반 low / medium / high 위험도 분류
+                        </p>
+                        <span class="badge bg-success">완료</span>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="border rounded p-3 h-100 bg-light">
+                        <h6 class="fw-bold">회원 예측 기록</h6>
+                        <p class="text-muted mb-2">
+                            로그인 사용자 예측 결과를 Oracle DB에 저장하고 조회
+                        </p>
+                        <span class="badge bg-primary">구현 중</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -223,7 +322,7 @@
                     <li class="mb-2">Backend: Flask</li>
                     <li class="mb-2">예측 모델: RandomForestClassifier</li>
                     <li class="mb-2">이미지 탐지: YOLO 준비 중</li>
-                    <li class="mb-2">DB: Oracle DB 예정</li>
+                    <li class="mb-2">DB: Oracle DB 연동</li>
                 </ul>
             </div>
 
