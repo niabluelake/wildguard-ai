@@ -10,7 +10,6 @@ def get_user_by_username(username):
             username,
             password_hash,
             name,
-            email,
             created_at
         FROM users
         WHERE username = :username
@@ -19,7 +18,7 @@ def get_user_by_username(username):
     return fetch_one(sql, {"username": username})
 
 
-def register_user(username, password, name=None, email=None):
+def register_user(username, password, name=None):
     if get_user_by_username(username) is not None:
         raise ValueError("이미 사용 중인 아이디입니다.")
 
@@ -27,13 +26,11 @@ def register_user(username, password, name=None, email=None):
         INSERT INTO users (
             username,
             password_hash,
-            name,
-            email
+            name
         ) VALUES (
             :username,
             :password_hash,
-            :name,
-            :email
+            :name
         )
     """
 
@@ -41,7 +38,6 @@ def register_user(username, password, name=None, email=None):
         "username": username,
         "password_hash": generate_password_hash(password),
         "name": name,
-        "email": email,
     }
 
     return execute(sql, params)

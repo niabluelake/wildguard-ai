@@ -185,6 +185,107 @@
         #saveStatus {
             display: none;
         }
+        .risk-visual {
+            margin: 18px 0 24px 0;
+        }
+
+        .risk-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .risk-percent {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .progress-wrap {
+            width: 100%;
+            height: 28px;
+            background: #e5e7eb;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            border-radius: 999px;
+            transition: width 0.4s ease;
+        }
+
+        .progress-low {
+            background: #16a34a;
+        }
+
+        .progress-medium {
+            background: #f59e0b;
+        }
+
+        .progress-high {
+            background: #dc2626;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin: 20px 0;
+        }
+
+        .metric-box {
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .metric-box h4 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            color: #4b5563;
+        }
+
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .analysis-box {
+            background: #f8fafc;
+            border-left: 5px solid #2563eb;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .action-box {
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 18px;
+            line-height: 1.6;
+        }
+
+        .action-low {
+            background: #dcfce7;
+            border: 1px solid #86efac;
+            color: #166534;
+        }
+
+        .action-medium {
+            background: #fef3c7;
+            border: 1px solid #fcd34d;
+            color: #92400e;
+        }
+
+        .action-high {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #991b1b;
+        }
+
     </style>
 </head>
 <body>
@@ -216,74 +317,40 @@
         <form id="riskForm">
             <div class="form-grid">
                 <div class="form-group">
-                    <label>주야간</label>
-                    <select name="day">
-                        <option value="day">낮</option>
-                        <option value="night" selected>밤</option>
+                    <label>자치구</label>
+                    <select name="district">
+                        <option value="은평구">은평구</option>
+                        <option value="도봉구">도봉구</option>
+                        <option value="성북구">성북구</option>
+                        <option value="강북구">강북구</option>
+                        <option value="종로구">종로구</option>
+                        <option value="서대문구">서대문구</option>
+                        <option value="노원구">노원구</option>
+                        <option value="중랑구">중랑구</option>
+                        <option value="송파구">송파구</option>
+                        <option value="광진구">광진구</option>
+                        <option value="강동구">강동구</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label>카메라 타입</label>
-                    <select name="camera_type">
-                        <option value="RGB">일반 카메라</option>
-                        <option value="IR" selected>적외선 카메라</option>
+                    <label>월</label>
+                    <select name="month">
+                        <option value="1">1월</option>
+                        <option value="2">2월</option>
+                        <option value="3">3월</option>
+                        <option value="4">4월</option>
+                        <option value="5">5월</option>
+                        <option value="6">6월</option>
+                        <option value="7">7월</option>
+                        <option value="8">8월</option>
+                        <option value="9">9월</option>
+                        <option value="10" selected>10월</option>
+                        <option value="11">11월</option>
+                        <option value="12">12월</option>
                     </select>
-                </div>
-
-                <div class="form-group">
-                    <label>날씨</label>
-                    <select name="weather">
-                        <option value="sunny">맑음</option>
-                        <option value="cloudy" selected>흐림</option>
-                        <option value="rainy">비</option>
-                        <option value="snowy">눈</option>
-                        <option value="foggy">안개</option>
-                        <option value="unknown">알 수 없음</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>위치</label>
-                    <input type="text" name="location" value="대산농원">
-                </div>
-
-                <div class="form-group">
-                    <label>시간대</label>
-                    <select name="time_zone">
-                        <option value="dawn">새벽</option>
-                        <option value="day">낮</option>
-                        <option value="evening">저녁</option>
-                        <option value="night" selected>밤</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>계절</label>
-                    <select name="season">
-                        <option value="spring">봄</option>
-                        <option value="summer">여름</option>
-                        <option value="fall" selected>가을</option>
-                        <option value="winter">겨울</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>객체 수</label>
-                    <input type="number" name="object_count" value="2" min="0">
-                </div>
-
-                <div class="form-group">
-                    <label>최대 bbox 면적 비율</label>
-                    <input type="number" step="0.0001" name="max_bbox_area_ratio" value="0.0235" min="0">
-                </div>
-
-                <div class="form-group">
-                    <label>평균 bbox 면적 비율</label>
-                    <input type="number" step="0.0001" name="avg_bbox_area_ratio" value="0.0206" min="0">
                 </div>
             </div>
-
             <button type="submit">위험도 예측</button>
         </form>
     </div>
@@ -305,18 +372,64 @@
 
         <div id="riskBadge" class="risk-badge">-</div>
 
+        <div class="risk-visual">
+            <div class="risk-title-row">
+                <strong>위험도 수준</strong>
+                <span id="riskPercent" class="risk-percent">0%</span>
+            </div>
+
+            <div class="progress-wrap">
+                <div id="riskProgressBar" class="progress-bar"></div>
+            </div>
+        </div>
+
         <div id="message" class="message"></div>
 
-        <div class="summary">
-            <h3>입력 요약</h3>
+        <div class="metric-grid">
+            <div class="metric-box">
+                <h4>자치구</h4>
+                <div id="metricDistrict" class="metric-value">-</div>
+                <small>서울시 멧돼지 민원신고 기준 지역</small>
+            </div>
+
+            <div class="metric-box">
+                <h4>월</h4>
+                <div id="metricMonth" class="metric-value">-</div>
+                <small>멧돼지 출현 신고가 발생한 월별 조건</small>
+            </div>
+
+            <div class="metric-box">
+                <h4>계절</h4>
+                <div id="metricSeason" class="metric-value">-</div>
+                <small>월 정보를 기준으로 자동 분류된 계절</small>
+            </div>
+        </div>
+
+        <div class="analysis-box">
+            <h3>과거 신고 통계</h3>
             <ul>
-                <li>주야간: <span id="summaryDay"></span></li>
-                <li>카메라 타입: <span id="summaryCamera"></span></li>
-                <li>시간대: <span id="summaryTimeZone"></span></li>
-                <li>객체 수: <span id="summaryObjectCount"></span></li>
-                <li>최대 bbox 면적 비율: <span id="summaryMaxBbox"></span></li>
-                <li>평균 bbox 면적 비율: <span id="summaryAvgBbox"></span></li>
+                <li>자치구 총 출현개체수: <strong><span id="statDistrictTotal">-</span>건</strong></li>
+                <li>자치구 평균 출현개체수: <strong><span id="statDistrictAvg">-</span>건</strong></li>
+                <li>해당 월 서울 평균 출현개체수: <strong><span id="statMonthAvg">-</span>건</strong></li>
+                <li>자치구·월 평균 출현개체수: <strong><span id="statDistrictMonthAvg">-</span>건</strong></li>
+                <li>자치구 총 포획개체수: <strong><span id="statDistrictCapture">-</span>건</strong></li>
             </ul>
+        </div>
+        <div id="actionBox" class="action-box">
+            <strong>대응 안내</strong>
+            <p id="actionMessage" style="margin-bottom: 0;"></p>
+        </div>
+
+        <div class="analysis-box">
+            <h3>분석 요약</h3>
+            <ul>
+                <li>자치구: <span id="summaryDistrict"></span></li>
+                <li>월: <span id="summaryMonth"></span>월</li>
+                <li>계절: <span id="summarySeason"></span></li>
+            </ul>
+            <p style="margin-bottom: 0;">
+                서울시 멧돼지 민원신고 현황 데이터를 기반으로 해당 자치구와 월 조건의 출현 위험도를 예측했습니다.
+            </p>
         </div>
     </div>
 
@@ -328,6 +441,10 @@
     const errorBox = document.getElementById("errorBox");
     const riskBadge = document.getElementById("riskBadge");
     const saveStatus = document.getElementById("saveStatus");
+    const riskPercent = document.getElementById("riskPercent");
+    const riskProgressBar = document.getElementById("riskProgressBar");
+    const actionBox = document.getElementById("actionBox");
+    const actionMessage = document.getElementById("actionMessage");
 
     form.addEventListener("submit", async function (event) {
         event.preventDefault();
@@ -339,15 +456,8 @@
         const formData = new FormData(event.target);
 
         const data = {
-            day: formData.get("day"),
-            camera_type: formData.get("camera_type"),
-            weather: formData.get("weather"),
-            location: formData.get("location"),
-            time_zone: formData.get("time_zone"),
-            season: formData.get("season"),
-            object_count: Number(formData.get("object_count")),
-            max_bbox_area_ratio: Number(formData.get("max_bbox_area_ratio")),
-            avg_bbox_area_ratio: Number(formData.get("avg_bbox_area_ratio"))
+            district: formData.get("district"),
+            month: Number(formData.get("month"))
         };
 
         try {
@@ -370,27 +480,71 @@
 
             riskBadge.className = "risk-badge";
 
+            let percent = 0;
+            let label = "";
+            let actionText = "";
+
+            riskProgressBar.className = "progress-bar";
+            actionBox.className = "action-box";
+
             if (riskLevel === "low") {
+                percent = 30;
+                label = "낮음";
                 riskBadge.classList.add("risk-low");
-                riskBadge.textContent = "LOW";
+                riskBadge.textContent = "✅ 위험도 낮음";
+                riskProgressBar.classList.add("progress-low");
+                actionBox.classList.add("action-low");
+                actionText = "현재 위험도는 낮은 편입니다. 다만 야생동물 출현 가능성은 있으므로 기본적인 주의는 필요합니다.";
             } else if (riskLevel === "medium") {
+                percent = 60;
+                label = "보통";
                 riskBadge.classList.add("risk-medium");
-                riskBadge.textContent = "MEDIUM";
+                riskBadge.textContent = "⚠️ 위험도 보통";
+                riskProgressBar.classList.add("progress-medium");
+                actionBox.classList.add("action-medium");
+                actionText = "주의가 필요한 상황입니다. 주변을 확인하고 야간 이동이나 단독 접근은 피하는 것이 좋습니다.";
             } else if (riskLevel === "high") {
+                percent = 90;
+                label = "높음";
                 riskBadge.classList.add("risk-high");
-                riskBadge.textContent = "HIGH";
+                riskBadge.textContent = "🚨 위험도 높음";
+                riskProgressBar.classList.add("progress-high");
+                actionBox.classList.add("action-high");
+                actionText = "고위험 상황입니다. 현장 접근을 제한하고 필요 시 관리자 또는 지자체 담당자에게 신고하세요.";
             } else {
+                percent = 50;
+                label = riskLevel;
                 riskBadge.textContent = riskLevel;
             }
 
-            document.getElementById("message").textContent = prediction.message;
+            riskPercent.textContent = percent + "%";
+            riskProgressBar.style.width = percent + "%";
+            actionMessage.textContent = actionText;
 
-            document.getElementById("summaryDay").textContent = prediction.input.day;
-            document.getElementById("summaryCamera").textContent = prediction.input.camera_type;
-            document.getElementById("summaryTimeZone").textContent = prediction.input.time_zone;
-            document.getElementById("summaryObjectCount").textContent = prediction.input.object_count;
-            document.getElementById("summaryMaxBbox").textContent = prediction.input.max_bbox_area_ratio;
-            document.getElementById("summaryAvgBbox").textContent = prediction.input.avg_bbox_area_ratio;
+            document.getElementById("summaryDistrict").textContent = prediction.input.district;
+            document.getElementById("summaryMonth").textContent = prediction.input.month;
+            document.getElementById("summarySeason").textContent = prediction.input.season;
+
+            document.getElementById("metricDistrict").textContent = prediction.input.district;
+            document.getElementById("metricMonth").textContent = prediction.input.month + "월";
+            document.getElementById("metricSeason").textContent = prediction.input.season;
+
+            const stats = prediction.stats || {};
+
+            document.getElementById("statDistrictTotal").textContent =
+                stats.district_total_count ?? "-";
+
+            document.getElementById("statDistrictAvg").textContent =
+                stats.district_avg_count ?? "-";
+            
+            document.getElementById("statMonthAvg").textContent =
+                stats.month_avg_count ?? "-";
+
+            document.getElementById("statDistrictMonthAvg").textContent =
+                stats.district_month_avg_count ?? "-";
+
+            document.getElementById("statDistrictCapture").textContent =
+                stats.district_total_capture ?? "-";
 
             if (result.saved_to_db) {
                 saveStatus.textContent = "예측 결과가 Oracle DB에 저장되었습니다.";

@@ -1,6 +1,5 @@
 from flask import Blueprint, jsonify, request, session
 
-from services.risk_log_service import save_risk_prediction_log
 from services.risk_prediction_service import predict_risk
 
 
@@ -18,38 +17,25 @@ def predict():
                 "message": "JSON 요청 데이터가 없습니다.",
             }), 400
 
-        result = predict_risk(input_data)
+        required_fields = ["district", "month"]
 
-        day = input_data.get("day")
-        camera_type = input_data.get("camera_type")
-        weather = input_data.get("weather")
-        location = input_data.get("location")
-        time_zone = input_data.get("time_zone")
-        season = input_data.get("season")
-        object_count = input_data.get("object_count")
-        max_bbox_area_ratio = input_data.get("max_bbox_area_ratio")
-        avg_bbox_area_ratio = input_data.get("avg_bbox_area_ratio")
-        risk_level = result.get("risk_level")
-        risk_message = result.get("message")
+        missing_fields = [
+            field for field in required_fields
+            if field not in input_data or input_data[field] in [None, ""]
+        ]
 
-        if "user_id" in session:
-            save_risk_prediction_log(
-                user_id=session["user_id"],
-                day=day,
-                camera_type=camera_type,
-                weather=weather,
-                location=location,
-                time_zone=time_zone,
-                season=season,
-                object_count=object_count,
-                max_bbox_area_ratio=max_bbox_area_ratio,
-                avg_bbox_area_ratio=avg_bbox_area_ratio,
-                risk_level=risk_level,
-                risk_message=risk_message,
-            )
-            saved_to_db = True
-        else:
-            saved_to_db = False
+        if missing_fields:
+            return jsonify({
+                "success": False,
+                "message": f"필수 입력이 없습니다: {missing_fields}",
+            }), 400
+
+        result = predict_risk({
+            "district": input_data.get("district"),
+            "month": input_data.get("month"),
+        })
+
+        saved_to_db = False
 
         return jsonify({
             "success": True,

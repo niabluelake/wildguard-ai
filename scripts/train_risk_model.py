@@ -16,20 +16,16 @@ DATA_PATH = BASE_DIR / "data" / "aihub" / "ml_dataset" / "aihub_wildlife_metadat
 MODEL_DIR = BASE_DIR / "models" / "ml"
 MODEL_PATH = MODEL_DIR / "risk_model.pkl"
 
+# 일반 사용자가 직접 입력할 수 있는 상황 정보만 사용
 CATEGORICAL_FEATURES = [
     "day",
-    "camera_type",
     "weather",
     "location",
     "time_zone",
     "season",
 ]
 
-NUMERIC_FEATURES = [
-    "object_count",
-    "max_bbox_area_ratio",
-    "avg_bbox_area_ratio",
-]
+NUMERIC_FEATURES = []
 
 TARGET = "risk_level"
 
@@ -53,7 +49,9 @@ def load_dataset():
 def train_model():
     df = load_dataset()
 
-    X = df[CATEGORICAL_FEATURES + NUMERIC_FEATURES]
+    feature_columns = CATEGORICAL_FEATURES + NUMERIC_FEATURES
+
+    X = df[feature_columns]
     y = df[TARGET]
 
     X_train, X_test, y_train, y_test = train_test_split(
@@ -64,11 +62,15 @@ def train_model():
         stratify=y,
     )
 
+    transformers = [
+        ("cat", OneHotEncoder(handle_unknown="ignore"), CATEGORICAL_FEATURES),
+    ]
+
+    if NUMERIC_FEATURES:
+        transformers.append(("num", "passthrough", NUMERIC_FEATURES))
+
     preprocessor = ColumnTransformer(
-        transformers=[
-            ("cat", OneHotEncoder(handle_unknown="ignore"), CATEGORICAL_FEATURES),
-            ("num", "passthrough", NUMERIC_FEATURES),
-        ]
+        transformers=transformers
     )
 
     model = RandomForestClassifier(
@@ -94,7 +96,8 @@ def train_model():
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
     joblib.dump(pipeline, MODEL_PATH)
 
-    print("[INFO] 위험도 예측 모델 학습 완료")
+    print("[INFO] 상황 기반 야생동물 출현 위험도 예측 모델 학습 완료")
+    print("[INFO] 사용 feature:", feature_columns)
     print("[INFO] 데이터 크기:", df.shape)
     print("[INFO] 모델 저장 위치:", MODEL_PATH)
     print()

@@ -5,63 +5,111 @@ import pandas as pd
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-MODEL_PATH = BASE_DIR / "models" / "ml" / "risk_model.pkl"
+
+MODEL_PATH = BASE_DIR / "models" / "ml" / "seoul_boar_risk_model.pkl"
+STATS_PATH = BASE_DIR / "models" / "ml" / "seoul_boar_stats.pkl"
 
 
-FEATURE_COLUMNS = [
-    "day",
-    "camera_type",
-    "weather",
-    "location",
-    "time_zone",
-    "season",
-    "object_count",
-    "max_bbox_area_ratio",
-    "avg_bbox_area_ratio",
-]
+def get_season(month: int) -> str:
+    if month in [3, 4, 5]:
+        return "spring"
+    if month in [6, 7, 8]:
+        return "summer"
+    if month in [9, 10, 11]:
+        return "fall"
+    return "winter"
 
 
-def load_model():
+def get_korean_season(season: str) -> str:
+    season_map = {
+        "spring": "봄",
+        "summer": "여름",
+        "fall": "가을",
+        "winter": "겨울",
+    }
+    return season_map.get(season, season)
+
+
+def get_risk_message(risk_level: str) -> str:
+    if risk_level == "high":
+        return "해당 자치구와 월 조건에서는 과거 멧돼지 출현 신고가 많은 편입니다. 산림 인근, 하천 주변, 야간 이동에 주의하세요."
+    if risk_level == "medium":
+        return "해당 조건에서는 멧돼지 출현 가능성이 보통 수준입니다. 야외 이동 시 주변을 확인하고 단독 접근은 피하는 것이 좋습니다."
+    return "해당 조건에서는 과거 멧돼지 출현 신고가 적은 편입니다. 다만 야생동물 출현 가능성은 있으므로 기본적인 주의는 필요합니다."
+
+
+def find_value(df, filters, column_name, default_value=0):
+    result = df.copy()
+
+    for key, value in filters.items():
+        result = result[result[key] == value]
+
+    if result.empty:
+        return default_value
+
+    return result.iloc[0][column_name]
+
+
+def predict_risk(input_data: dict) -> dict:
     if not MODEL_PATH.exists():
         raise FileNotFoundError(f"모델 파일이 없습니다: {MODEL_PATH}")
 
-    return joblib.load(MODEL_PATH)
+    if not STATS_PATH.exists():
+        raise FileNotFoundError(f"통계 파일이 없습니다: {STATS_PATH}")
 
+    model = joblib.load(MODEL_PATH)
+    stats = joblib.load(STATS_PATH)
 
-def get_risk_message(risk_level):
-    messages = {
-        "low": "현재 조건에서는 야생동물 출현 위험이 낮은 편입니다. 주변 상황을 계속 확인하세요.",
-        "medium": "야생동물 출현 가능성이 있어 주의가 필요합니다. 직접 접근하지 말고 주변을 확인하세요.",
-        "high": "위험도가 높습니다. 야생동물에게 접근하지 말고 안전한 장소로 이동한 뒤 필요 시 관계 기관에 신고하세요.",
-    }
+    district = input_data.get("district")
+    month = int(input_data.get("month"))
+    year = int(input_data.get("year", stats["latest_year"]))
 
-    return messages.get(risk_level, "위험도 판단 결과를 확인할 수 없습니다.")
+    season = get_season(month)
 
+    district_stats = stats["district_stats"]
+    month_stats = stats["month_stats"]
+    district_month_stats = stats["district_month_stats"]
 
-def validate_input(data):
-    missing = [col for col in FEATURE_COLUMNS if col not in data]
+    district_total_count = find_value(
+        district_stats,
+        {"자치구": district},
+        "district_total_count",
+    )
 
-    if missing:
-        raise ValueError(f"필수 입력값이 없습니다: {missing}")
+    district_avg_count = find_value(
+        district_stats,
+        {"자치구": district},
+        "district_avg_count",
+    )
 
-    return True
+    district_total_capture = find_value(
+        district_stats,
+        {"자치구": district},
+        "district_total_capture",
+    )
 
+    month_avg_count = find_value(
+        month_stats,
+        {"월": month},
+        "month_avg_count",
+    )
 
-def predict_risk(data):
-    validate_input(data)
-
-    model = load_model()
+    district_month_avg_count = find_value(
+        district_month_stats,
+        {"자치구": district, "월": month},
+        "district_month_avg_count",
+    )
 
     input_df = pd.DataFrame([{
-        "day": data["day"],
-        "camera_type": data["camera_type"],
-        "weather": data["weather"],
-        "location": data["location"],
-        "time_zone": data["time_zone"],
-        "season": data["season"],
-        "object_count": int(data["object_count"]),
-        "max_bbox_area_ratio": float(data["max_bbox_area_ratio"]),
-        "avg_bbox_area_ratio": float(data["avg_bbox_area_ratio"]),
+        "연도": year,
+        "자치구": district,
+        "월": month,
+        "계절": season,
+        "district_total_count": district_total_count,
+        "district_avg_count": district_avg_count,
+        "month_avg_count": month_avg_count,
+        "district_month_avg_count": district_month_avg_count,
+        "district_total_capture": district_total_capture,
     }])
 
     risk_level = model.predict(input_df)[0]
@@ -70,5 +118,17 @@ def predict_risk(data):
     return {
         "risk_level": risk_level,
         "message": message,
-        "input": input_df.iloc[0].to_dict(),
+        "input": {
+            "district": district,
+            "month": month,
+            "year": year,
+            "season": get_korean_season(season),
+        },
+        "stats": {
+            "district_total_count": int(district_total_count),
+            "district_avg_count": round(float(district_avg_count), 2),
+            "month_avg_count": round(float(month_avg_count), 2),
+            "district_month_avg_count": round(float(district_month_avg_count), 2),
+            "district_total_capture": int(district_total_capture),
+        }
     }

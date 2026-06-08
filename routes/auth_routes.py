@@ -40,7 +40,6 @@ def register():
         password = request.form.get("password", "")
         password_confirm = request.form.get("password_confirm", "")
         name = request.form.get("name", "").strip() or None
-        email = request.form.get("email", "").strip() or None
 
         if not username or not password:
             flash("아이디와 비밀번호를 입력해 주세요.")
@@ -48,13 +47,13 @@ def register():
 
         if password != password_confirm:
             flash("비밀번호 확인이 일치하지 않습니다.")
-            return render_template("register.html", username=username, name=name, email=email), 400
+            return render_template("register.html", username=username, name=name), 400
 
         try:
-            register_user(username=username, password=password, name=name, email=email)
+            register_user(username=username, password=password, name=name)
         except ValueError as error:
             flash(str(error))
-            return render_template("register.html", username=username, name=name, email=email), 409
+            return render_template("register.html", username=username, name=name), 409
 
         flash("회원가입이 완료되었습니다. 로그인해 주세요.")
         return redirect(url_for("auth.login"))
