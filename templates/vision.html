@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}Vision 야생동물 분석{% endblock %}
+
+{% block extra_style %}
+<style>
+.vision-card {
+    background: #fff;
+    border-radius: 24px;
+    padding: 34px;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    margin-bottom: 28px;
+}
+
+.vision-title {
+    font-size: 34px;
+    font-weight: 900;
+    color: #1e3a8a;
+}
+
+.vision-desc {
+    color: #64748b;
+    margin-top: 10px;
+}
+
+.upload-zone {
+    border: 2px dashed #93c5fd;
+    background: #f8fbff;
+    border-radius: 20px;
+    padding: 24px;
+    margin-top: 24px;
+}
+
+.section-title {
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 14px;
+}
+
+.result-panel {
+    display: none;
+    background: #fff;
+    border-radius: 24px;
+    padding: 28px;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    margin-top: 24px;
+}
+
+.result-img {
+    max-width: 100%;
+    border-radius: 18px;
+    border: 1px solid #e5e7eb;
+}
+
+.info-box {
+    background: #f1f5f9;
+    padding: 16px;
+    border-radius: 16px;
+    margin-bottom: 18px;
+}
+
+.risk-badge {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-weight: 800;
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.video-grid img {
+    width: 230px;
+    margin: 8px;
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="vision-card">
+    <h1 class="vision-title">Vision 야생동물 위험 감지</h1>
+    <p class="vision-desc">
+        이미지 또는 짧은 영상을 업로드하면 사족보행 야생동물을 탐지하고 위험도를 분석합니다.
+    </p>
+
+    <div class="upload-zone">
+        <h5 class="section-title">이미지 분석</h5>
+        <input class="form-control mb-3" type="file" id="imageInput" accept="image/*">
+        <button class="btn btn-primary px-4" onclick="uploadImage()">이미지 분석 시작</button>
+        <span id="imageLoading" class="ms-3 text-muted" style="display:none;">분석 중...</span>
+    </div>
+</div>
+
+<div id="imageResultPanel" class="result-panel" style="display:none;">
+    <h3 class="section-title">이미지 분석 결과</h3>
+    <div id="riskBadge" class="risk-badge mb-3">위험도</div>
+    <div class="info-box">
+        <p id="info" class="mb-1 fw-semibold"></p>
+        <p id="bboxInfo" class="mb-0 text-muted"></p>
+    </div>
+
+    <img id="resultImage" class="result-img" onclick="window.open(this.src)">
+</div>
+
+<div class="vision-card">
+    <div class="upload-zone">
+
+        <h3 class="section-title">짧은 영상 분석 데모</h3>
+        <p class="text-muted">
+            영상은 전체 프레임이 아니라 일정 간격의 프레임을 추출하여 분석합니다.
+        </p>
+
+        <input class="form-control mb-3" type="file" id="videoInput" accept="video/*">
+        <button class="btn btn-primary px-4" onclick="uploadVideo()">영상 분석 시작</button>
+        <span id="videoLoading" class="ms-3 text-muted" style="display:none;">분석 중...</span>
+
+        <div id="videoResults" class="video-grid mt-4"></div>
+    </div>
+</div>
+
+<script>
+function uploadImage() {
+    const file = document.getElementById("imageInput").files[0];
+
+    if (!file) {
+        alert("이미지를 선택해줘.");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    document.getElementById("imageLoading").style.display = "inline";
+    document.getElementById("imageResultPanel").style.display = "none";
+
+    fetch("/api/vision/predict", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        const det = data.detections[0];
+
+        document.getElementById("imageLoading").style.display = "none";
+        document.getElementById("imageResultPanel").style.display = "block";
+        document.getElementById("resultImage").src = data.result_image_url;
+
+        const badge = document.getElementById("riskBadge");
+        const level = (det?.risk_level || "safe").toLowerCase();
+        const conf = det?.confidence ? det.confidence.toFixed(2) : 0;
+
+        badge.innerText = level.toUpperCase();
+
+        if (level === "danger") {
+            badge.style.background = "#fee2e2";
+            badge.style.color = "#b91c1c";
+        } else if (level === "warning") {
+            badge.style.background = "#fef9c3";
+            badge.style.color = "#92400e";
+        } else {
+            badge.style.background = "#dcfce7";
+            badge.style.color = "#166534";
+        }
+
+        document.getElementById("info").innerText =
+            `탐지: ${data.count}개 / 위험도: ${level} / 신뢰도: ${conf}`;
+
+        document.getElementById("bboxInfo").innerText =
+            det ? `bbox: [${det.bbox.join(", ")}]` : "탐지 없음";
+
+        document.getElementById("imageResultPanel").scrollIntoView({
+            behavior: "smooth"
+        });
+    })
+    .catch(err => {
+        console.error(err);
+        document.getElementById("imageLoading").style.display = "none";
+        alert("이미지 분석 중 오류가 발생했습니다.");
+    });
+}
+
+function uploadVideo() {
+    const file = document.getElementById("videoInput").files[0];
+
+    if (!file) {
+        alert("영상을 업로드하세요.");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("video", file);
+
+    const loading = document.getElementById("videoLoading");
+    const container = document.getElementById("videoResults");
+    const videoPreview = document.getElementById("videoPreview");
+
+    if (videoPreview) {
+        videoPreview.src = URL.createObjectURL(file);
+        videoPreview.style.display = "block";
+    }
+
+    loading.style.display = "inline";
+    container.innerHTML = "";
+
+    fetch("/api/vision/video", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log("video response:", data);
+
+        loading.style.display = "none";
+        container.innerHTML = "";
+
+        if (!data.frames || data.frames.length === 0) {
+            container.innerHTML = "<p class='text-muted'>분석된 프레임이 없습니다.</p>";
+            return;
+        }
+
+        data.frames.forEach(url => {
+            const img = document.createElement("img");
+            img.src = url;
+            img.style.width = "220px";
+            img.style.margin = "8px";
+            img.style.borderRadius = "12px";
+            img.style.border = "1px solid #e5e7eb";
+            img.style.cursor = "pointer";
+
+            img.onclick = function () {
+                window.open(this.src);
+            };
+
+            container.appendChild(img);
+        });
+    })
+    .catch(err => {
+        console.error(err);
+        loading.style.display = "none";
+        container.innerHTML = "<p class='text-danger'>영상 분석 중 오류가 발생했습니다.</p>";
+    });
+}
+</script>
+{% endblock %}

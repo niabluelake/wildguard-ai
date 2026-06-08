@@ -22,3 +22,5 @@ data/
 *.joblib
 .env
 .venv/
+static/vision_uploads/
+static/vision_outputs/
