@@ -1,8 +1,5 @@
-.venv/ 
-__pycache__/ 
-*.pyc 
-.env
-data/
+__pycache__/
+*.pyc
 data/raw/ 
 data/processed/ 
 static/uploads/ 
@@ -11,8 +8,17 @@ data/aihub_json/
 data/ml_dataset/
 aihub_json/
 data/aihub/ml_dataset/
-*.pkl
-*.joblib
 .idea/
 aihub_wildlife_metadata.csv
 models/ml/
+# Vision model
+models/vision/*
+!models/vision/best.pt
+
+# Training outputs
+runs/
+data/
+*.pkl
+*.joblib
+.env
+.venv/
