@@ -1,125 +1,218 @@
 {% extends "base.html" %}
 
-{% block title %}Vision 야생동물 분석{% endblock %}
+{% block title %}이미지/영상 야생동물 탐지 | WildGuard AI{% endblock %}
 
 {% block extra_style %}
 <style>
-.vision-card {
-    background: #fff;
-    border-radius: 24px;
-    padding: 34px;
-    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
-    margin-bottom: 28px;
-}
+    .vision-hero {
+        background: linear-gradient(135deg, #0f172a, #166534);
+        color: white;
+        padding: 64px 0;
+    }
 
-.vision-title {
-    font-size: 34px;
-    font-weight: 900;
-    color: #1e3a8a;
-}
+    .vision-hero h1 {
+        font-weight: 900;
+        letter-spacing: -1px;
+    }
 
-.vision-desc {
-    color: #64748b;
-    margin-top: 10px;
-}
+    .vision-card {
+        background: white;
+        border: 0;
+        border-radius: 22px;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+        padding: 28px;
+        height: 100%;
+    }
 
-.upload-zone {
-    border: 2px dashed #93c5fd;
-    background: #f8fbff;
-    border-radius: 20px;
-    padding: 24px;
-    margin-top: 24px;
-}
+    .upload-zone {
+        border: 2px dashed #93c5fd;
+        background: #f8fbff;
+        border-radius: 18px;
+        padding: 24px;
+    }
 
-.section-title {
-    font-weight: 800;
-    color: #0f172a;
-    margin-bottom: 14px;
-}
+    .result-panel {
+        display: none;
+        background: white;
+        border-radius: 22px;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+        padding: 28px;
+    }
 
-.result-panel {
-    display: none;
-    background: #fff;
-    border-radius: 24px;
-    padding: 28px;
-    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
-    margin-top: 24px;
-}
+    .result-img {
+        max-width: 100%;
+        border-radius: 18px;
+        border: 1px solid #e5e7eb;
+        cursor: pointer;
+    }
 
-.result-img {
-    max-width: 100%;
-    border-radius: 18px;
-    border: 1px solid #e5e7eb;
-}
+    .metric-box {
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 18px;
+        height: 100%;
+    }
 
-.info-box {
-    background: #f1f5f9;
-    padding: 16px;
-    border-radius: 16px;
-    margin-bottom: 18px;
-}
+    .metric-label {
+        color: #64748b;
+        font-size: 14px;
+        margin-bottom: 6px;
+    }
 
-.risk-badge {
-    display: inline-block;
-    padding: 8px 16px;
-    border-radius: 999px;
-    font-weight: 800;
-    background: #fee2e2;
-    color: #b91c1c;
-}
+    .metric-value {
+        font-size: 24px;
+        font-weight: 900;
+    }
 
-.video-grid img {
-    width: 230px;
-    margin: 8px;
-    border-radius: 14px;
-    border: 1px solid #e5e7eb;
-}
+    .risk-pill {
+        display: inline-block;
+        padding: 10px 18px;
+        border-radius: 999px;
+        font-weight: 900;
+    }
+
+    .risk-danger {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .risk-warning {
+        background: #fef9c3;
+        color: #92400e;
+    }
+
+    .risk-safe {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .video-grid img {
+        width: 230px;
+        margin: 8px;
+        border-radius: 14px;
+        border: 1px solid #e5e7eb;
+        cursor: pointer;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="vision-card">
-    <h1 class="vision-title">Vision 야생동물 위험 감지</h1>
-    <p class="vision-desc">
-        이미지 또는 짧은 영상을 업로드하면 사족보행 야생동물을 탐지하고 위험도를 분석합니다.
-    </p>
-
-    <div class="upload-zone">
-        <h5 class="section-title">이미지 분석</h5>
-        <input class="form-control mb-3" type="file" id="imageInput" accept="image/*">
-        <button class="btn btn-primary px-4" onclick="uploadImage()">이미지 분석 시작</button>
-        <span id="imageLoading" class="ms-3 text-muted" style="display:none;">분석 중...</span>
-    </div>
-</div>
-
-<div id="imageResultPanel" class="result-panel" style="display:none;">
-    <h3 class="section-title">이미지 분석 결과</h3>
-    <div id="riskBadge" class="risk-badge mb-3">위험도</div>
-    <div class="info-box">
-        <p id="info" class="mb-1 fw-semibold"></p>
-        <p id="bboxInfo" class="mb-0 text-muted"></p>
-    </div>
-
-    <img id="resultImage" class="result-img" onclick="window.open(this.src)">
-</div>
-
-<div class="vision-card">
-    <div class="upload-zone">
-
-        <h3 class="section-title">짧은 영상 분석 데모</h3>
-        <p class="text-muted">
-            영상은 전체 프레임이 아니라 일정 간격의 프레임을 추출하여 분석합니다.
+<section class="vision-hero">
+    <div class="container">
+        <span class="badge bg-light text-success mb-3">2차 Vision 서비스</span>
+        <h1 class="display-5">이미지/영상 야생동물 탐지</h1>
+        <p class="lead mt-3 mb-0">
+            YOLO 모델을 활용해 업로드한 이미지와 짧은 영상에서 사족보행 야생동물을 탐지합니다.
         </p>
-
-        <input class="form-control mb-3" type="file" id="videoInput" accept="video/*">
-        <button class="btn btn-primary px-4" onclick="uploadVideo()">영상 분석 시작</button>
-        <span id="videoLoading" class="ms-3 text-muted" style="display:none;">분석 중...</span>
-
-        <div id="videoResults" class="video-grid mt-4"></div>
     </div>
-</div>
+</section>
 
+<section class="container wg-section">
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="vision-card">
+                <h3 class="fw-bold">이미지 분석</h3>
+                <p class="text-muted">
+                    현장 사진을 업로드하면 탐지 객체 수, 신뢰도, 위험 단계, 결과 이미지를 확인할 수 있습니다.
+                </p>
+
+                <div class="upload-zone mt-4">
+                    <input class="form-control mb-3" type="file" id="imageInput" accept="image/*">
+                    <button class="btn btn-success px-4" onclick="uploadImage()">이미지 분석 시작</button>
+                    <span id="imageLoading" class="ms-3 text-muted" style="display:none;">분석 중...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="vision-card">
+                <h3 class="fw-bold">짧은 영상 분석</h3>
+                <p class="text-muted">
+                    영상은 전체 프레임이 아니라 일정 간격의 프레임을 추출하여 데모 분석합니다.
+                </p>
+
+                <div class="upload-zone mt-4">
+                    <input class="form-control mb-3" type="file" id="videoInput" accept="video/*">
+                    <button class="btn btn-primary px-4" onclick="uploadVideo()">영상 분석 시작</button>
+                    <span id="videoLoading" class="ms-3 text-muted" style="display:none;">분석 중...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="container mb-5">
+    <div id="imageResultPanel" class="result-panel">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+            <div>
+                <h3 class="fw-bold mb-1">이미지 분석 결과</h3>
+                <p class="text-muted mb-0">탐지 결과는 모델 confidence를 기준으로 위험 단계를 표시합니다.</p>
+            </div>
+            <div id="riskBadge" class="risk-pill risk-safe mt-3 mt-md-0">SAFE</div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="metric-box">
+                    <div class="metric-label">탐지 개체 수</div>
+                    <div id="metricCount" class="metric-value">0개</div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="metric-box">
+                    <div class="metric-label">모델 신뢰도</div>
+                    <div id="metricConfidence" class="metric-value">0%</div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="metric-box">
+                    <div class="metric-label">위험 단계</div>
+                    <div id="metricRisk" class="metric-value">SAFE</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert alert-secondary">
+            <strong>탐지 상세:</strong>
+            <span id="bboxInfo">탐지 없음</span>
+        </div>
+
+        <img id="resultImage" class="result-img" alt="분석 결과 이미지" onclick="window.open(this.src)">
+    </div>
+
+    <div id="videoPanel" class="result-panel mt-4">
+        <h3 class="fw-bold">영상 프레임 분석 결과</h3>
+        <p class="text-muted">
+            일정 간격으로 추출한 프레임의 탐지 결과 이미지입니다.
+        </p>
+        <div id="videoResults" class="video-grid mt-3"></div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extra_script %}
 <script>
+function setRiskBadge(level) {
+    const badge = document.getElementById("riskBadge");
+    const metricRisk = document.getElementById("metricRisk");
+
+    badge.className = "risk-pill";
+    badge.innerText = level.toUpperCase();
+    metricRisk.innerText = level.toUpperCase();
+
+    if (level === "danger") {
+        badge.classList.add("risk-danger");
+    } else if (level === "warning") {
+        badge.classList.add("risk-warning");
+    } else {
+        badge.classList.add("risk-safe");
+    }
+}
+
 function uploadImage() {
     const file = document.getElementById("imageInput").files[0];
 
@@ -140,34 +233,32 @@ function uploadImage() {
     })
     .then(res => res.json())
     .then(data => {
-        const det = data.detections[0];
-
         document.getElementById("imageLoading").style.display = "none";
+
+        if (!data.success) {
+            alert(data.message || "이미지 분석 실패");
+            return;
+        }
+
+        const det = data.detections && data.detections.length > 0
+            ? data.detections[0]
+            : null;
+
+        const level = det ? det.risk_level.toLowerCase() : "safe";
+        const confidence = det ? det.confidence : 0;
+
         document.getElementById("imageResultPanel").style.display = "block";
         document.getElementById("resultImage").src = data.result_image_url;
 
-        const badge = document.getElementById("riskBadge");
-        const level = (det?.risk_level || "safe").toLowerCase();
-        const conf = det?.confidence ? det.confidence.toFixed(2) : 0;
+        document.getElementById("metricCount").innerText = `${data.count}개`;
+        document.getElementById("metricConfidence").innerText = `${Math.round(confidence * 100)}%`;
 
-        badge.innerText = level.toUpperCase();
-
-        if (level === "danger") {
-            badge.style.background = "#fee2e2";
-            badge.style.color = "#b91c1c";
-        } else if (level === "warning") {
-            badge.style.background = "#fef9c3";
-            badge.style.color = "#92400e";
-        } else {
-            badge.style.background = "#dcfce7";
-            badge.style.color = "#166534";
-        }
-
-        document.getElementById("info").innerText =
-            `탐지: ${data.count}개 / 위험도: ${level} / 신뢰도: ${conf}`;
+        setRiskBadge(level);
 
         document.getElementById("bboxInfo").innerText =
-            det ? `bbox: [${det.bbox.join(", ")}]` : "탐지 없음";
+            det
+                ? `클래스: ${det.class_name}, bbox: [${det.bbox.join(", ")}]`
+                : "탐지된 야생동물이 없습니다.";
 
         document.getElementById("imageResultPanel").scrollIntoView({
             behavior: "smooth"
@@ -192,15 +283,11 @@ function uploadVideo() {
     formData.append("video", file);
 
     const loading = document.getElementById("videoLoading");
+    const panel = document.getElementById("videoPanel");
     const container = document.getElementById("videoResults");
-    const videoPreview = document.getElementById("videoPreview");
-
-    if (videoPreview) {
-        videoPreview.src = URL.createObjectURL(file);
-        videoPreview.style.display = "block";
-    }
 
     loading.style.display = "inline";
+    panel.style.display = "none";
     container.innerHTML = "";
 
     fetch("/api/vision/video", {
@@ -209,10 +296,14 @@ function uploadVideo() {
     })
     .then(res => res.json())
     .then(data => {
-        console.log("video response:", data);
-
         loading.style.display = "none";
+        panel.style.display = "block";
         container.innerHTML = "";
+
+        if (!data.success) {
+            container.innerHTML = `<p class="text-danger">${data.message || "영상 분석 실패"}</p>`;
+            return;
+        }
 
         if (!data.frames || data.frames.length === 0) {
             container.innerHTML = "<p class='text-muted'>분석된 프레임이 없습니다.</p>";
@@ -222,11 +313,6 @@ function uploadVideo() {
         data.frames.forEach(url => {
             const img = document.createElement("img");
             img.src = url;
-            img.style.width = "220px";
-            img.style.margin = "8px";
-            img.style.borderRadius = "12px";
-            img.style.border = "1px solid #e5e7eb";
-            img.style.cursor = "pointer";
 
             img.onclick = function () {
                 window.open(this.src);
@@ -234,10 +320,15 @@ function uploadVideo() {
 
             container.appendChild(img);
         });
+
+        panel.scrollIntoView({
+            behavior: "smooth"
+        });
     })
     .catch(err => {
         console.error(err);
         loading.style.display = "none";
+        panel.style.display = "block";
         container.innerHTML = "<p class='text-danger'>영상 분석 중 오류가 발생했습니다.</p>";
     });
 }
