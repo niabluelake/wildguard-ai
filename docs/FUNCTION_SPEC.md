@@ -1,17 +1,10 @@
+> 문서 업데이트: 회원가입/로그인, 비회원 체험 모드, 로그인 사용자 DB 저장 정책을 추가 반영함.
+
 # WildGuard AI 기능명세서
 
 ## 1. 문서 개요
 
-본 문서는 WildGuard AI의 기능을 정의한다.
-
-현재 프로젝트는 다음 4단계 구조로 진행한다.
-
-| 단계 | 내용 |
-|---|---|
-| 1차 ML | 서울시 멧돼지 민원신고 현황 데이터를 기반으로 자치구·월별 출현 위험도 예측 |
-| 2차 Vision | AI Hub 야생동물 이미지와 bbox 라벨을 활용한 YOLO 객체 탐지 |
-| 3차 LLM | 위험도 예측 결과와 탐지 결과 기반 야생동물 대응 상담 |
-| 4차 SLM | 현장용 경량 야생동물 대응 상담 모델 |
+본 문서는 WildGuard AI의 기능을 정의한다. 현재 프로젝트는 AI Hub 야생동물 라벨링 데이터를 기반으로 1차 정형 데이터 ML, 2차 YOLO 객체 탐지, 3차 LLM 상담, 4차 SLM 상담으로 확장하는 구조이다.
 
 ---
 
@@ -20,222 +13,190 @@
 | 기능 ID | 기능명 | 설명 | 단계 |
 |---|---|---|---|
 | F-001 | 프로젝트 기본 화면 | WildGuard AI 소개 및 주요 기능 이동 | 공통 |
-| F-002 | 서울시 멧돼지 신고 데이터 수집 | 서울시 멧돼지 민원신고 CSV를 프로젝트 데이터로 구성 | 1차 |
-| F-003 | 위험도 라벨 생성 | 출현개체수 기준으로 low / medium / high 생성 | 1차 |
-| F-004 | 위험도 예측 모델 학습 | 자치구·월·계절·과거 통계 기반 분류 모델 학습 | 1차 |
+| F-002 | AI Hub JSON 메타데이터 변환 | 라벨링 JSON을 1차 ML용 CSV로 변환 | 1차 |
+| F-003 | 위험도 라벨 생성 | 객체 수, bbox 크기, 시간대를 기준으로 risk_level 생성 | 1차 |
+| F-004 | 위험도 예측 모델 학습 | 변환 CSV로 위험도 분류 모델 학습 | 1차 |
 | F-005 | 위험도 예측 API | 사용자 입력값 기반 위험도 예측 결과 반환 | 1차 |
-| F-006 | 위험도 예측 화면 | 웹에서 자치구와 월 입력 후 결과 확인 | 1차 |
-| F-007 | YOLO 라벨 변환 | AI Hub bbox를 YOLO txt 형식으로 변환 | 2차 |
-| F-008 | 이미지 탐지 API | 이미지 업로드 후 야생동물 탐지 | 2차 |
-| F-009 | 탐지 결과 이미지 저장 | bbox 표시 결과 이미지 저장 | 2차 |
+| F-006 | 위험도 예측 화면 | 웹에서 위험도 입력 및 결과 확인 | 1차 |
+| F-007 | YOLO 라벨 변환 | JSON bbox를 YOLO txt 형식으로 변환 | 2차 |
+| F-008 | 이미지 탐지 API | 이미지 업로드 후 사족보행 야생동물 탐지 | 2차 |
+| F-009 | 탐지 결과 이미지 저장 | bbox가 표시된 결과 이미지를 저장 | 2차 |
 | F-010 | LLM 상담 | 예측/탐지 결과 기반 대응 상담 제공 | 3차 |
 | F-011 | SLM 경량 상담 | 현장용 경량 상담 응답 제공 | 4차 |
-| F-012 | 회원가입/로그인 | 사용자 인증 및 세션 관리 | 공통 |
-| F-013 | Oracle DB 결과 저장 | 로그인 사용자 예측 결과 저장 | 공통 |
-| F-014 | 결과 조회 | 저장된 분석 결과 조회 | 공통 |
+| F-012 | Oracle DB 결과 저장 | 예측, 탐지, 상담 결과 저장 | 공통 |
+| F-013 | 결과 조회 | 저장된 분석 결과 조회 | 공통 |
 
 ---
 
 ## 3. F-001 프로젝트 기본 화면
 
 ### 기능 설명
-
 서비스 소개와 1차 위험도 예측, 2차 이미지 탐지, 3차 상담 기능으로 이동할 수 있는 메인 화면을 제공한다.
 
 ### URL
-
 ```http
 GET /
 ```
 
 ### 출력
+서비스명, 프로젝트 설명, 1차 위험도 예측 페이지 링크, 2차 이미지 탐지 페이지 링크, 3차 상담 페이지 링크
 
-- 서비스명
-- 프로젝트 설명
-- 1차 위험도 예측 페이지 링크
-- 2차 이미지 탐지 예정 안내
-- 3차 상담 예정 안내
-- 로그인/회원가입 또는 사용자 정보
+### 필요 이유
+사용자가 WildGuard AI의 전체 기능 흐름을 이해하고 각 기능으로 이동할 수 있어야 하기 때문이다.
 
 ---
 
-## 4. F-002 서울시 멧돼지 신고 데이터 수집
+## 4. F-002 AI Hub JSON 메타데이터 변환
 
 ### 기능 설명
-
-서울시 멧돼지 민원신고 현황 CSV를 1차 ML 학습 데이터로 사용한다.
+AI Hub 라벨링 JSON 파일을 읽어 머신러닝 학습 가능한 CSV 데이터셋으로 변환한다.
 
 ### 입력 경로
-
 ```text
-data/seoul_wildlife/seoul_boar_reports.csv
+data/aihub_json/TL-quadruped
 ```
 
-### 원본 컬럼
+### 출력 경로
+```text
+data/aihub/ml_dataset/aihub_wildlife_metadata.csv
+```
 
-| 컬럼 | 설명 |
-|---|---|
-| 연도 | 신고 연도 |
-| 자치구 | 서울시 자치구 |
-| 월 | 신고 월 |
-| 출현개체수 | 신고된 멧돼지 출현 개체수 |
-| 포획개체수 | 포획된 멧돼지 개체수 |
+### 실행 명령어
+```powershell
+python scripts/convert_aihub_metadata.py
+```
+
+### 처리 내용
+JSON 파일 재귀 탐색, 이미지 메타데이터 추출, annotation 정보 추출, 객체 수 계산, bbox 면적 비율 계산, 시간대와 계절 생성, risk_level 생성, CSV 저장
+
+### 출력 컬럼
+`json_file`, `image_id`, `file_name`, `width`, `height`, `date_created`, `hour`, `time_zone`, `season`, `day`, `camera_type`, `location`, `gps`, `weather`, `object_count`, `species`, `category_name`, `hazardous`, `nocturnality`, `max_bbox_area_ratio`, `avg_bbox_area_ratio`, `risk_level`
+
+### 현재 처리 결과
+```text
+데이터 크기: 30,700행 x 22컬럼
+medium: 18,694
+high: 10,196
+low: 1,810
+```
 
 ### 필요 이유
-
-AI Hub 이미지는 객체 탐지에는 적합하지만, 출현하지 않은 상황과 비교하는 지역별 위험도 예측에는 한계가 있다. 따라서 1차 ML은 실제 민원신고 기반의 지역·월별 데이터로 구성한다.
+원본 JSON은 ML 모델이 직접 학습하기 어렵다. 따라서 이미지 메타데이터와 annotation 정보를 정형 컬럼으로 변환해야 1차 머신러닝 프로젝트로 사용할 수 있다.
 
 ---
 
 ## 5. F-003 위험도 라벨 생성
 
 ### 기능 설명
+원본 데이터에 없는 위험도 라벨을 프로젝트 목적에 맞게 생성한다.
 
-`출현개체수`를 기준으로 서비스용 위험도 라벨을 생성한다.
+### 기준 컬럼
+`object_count`, `max_bbox_area_ratio`, `time_zone`, `day`
 
-| 조건 | risk_level |
+### 점수 규칙
+| 조건 | 점수 |
+|---|---:|
+| object_count >= 3 | +2 |
+| object_count == 2 | +1 |
+| max_bbox_area_ratio >= 0.05 | +2 |
+| max_bbox_area_ratio >= 0.02 | +1 |
+| time_zone이 night 또는 dawn | +1 |
+| day가 night | +1 |
+
+### 분류 규칙
+| 점수 | risk_level |
 |---|---|
-| 출현개체수 0건 | low |
-| 출현개체수 1건 | medium |
-| 출현개체수 2건 이상 | high |
+| 0~1 | low |
+| 2~3 | medium |
+| 4 이상 | high |
 
 ### 필요 이유
-
-원본 데이터는 출현개체수와 포획개체수를 제공하지만 위험도 라벨은 제공하지 않는다. 따라서 서비스 목적에 맞게 low / medium / high 라벨을 생성한다.
+AI Hub 라벨링 데이터에는 `hazardous`와 `nocturnality`는 있지만 서비스용 위험도 라벨은 없다. 객체 수와 bbox 크기, 야간 여부를 이용해 상황 위험도를 생성해야 ML 분류 모델 학습이 가능하다.
 
 ---
 
 ## 6. F-004 위험도 예측 모델 학습
 
 ### 기능 설명
-
-서울시 멧돼지 신고 데이터를 기반으로 위험도 분류 모델을 학습한다.
+변환된 CSV 데이터셋을 사용하여 위험도 분류 모델을 학습한다.
 
 ### 입력 데이터
-
 ```text
-data/seoul_wildlife/seoul_boar_reports.csv
+data/aihub/ml_dataset/aihub_wildlife_metadata.csv
 ```
 
-### 사용 Feature
-
+### 추천 Feature
 | 구분 | 컬럼 |
 |---|---|
-| 기본 | 연도, 자치구, 월, 계절 |
-| 파생 | district_total_count |
-| 파생 | district_avg_count |
-| 파생 | month_avg_count |
-| 파생 | district_month_avg_count |
-| 파생 | district_total_capture |
+| 범주형 | day, camera_type, weather, location, time_zone, season |
+| 수치형 | object_count, max_bbox_area_ratio, avg_bbox_area_ratio |
 
 ### Target
+`risk_level`
 
-```text
-risk_level
-```
+### 제외 권장 컬럼
+`hazardous`, `nocturnality`, `species`, `file_name`, `json_file`
 
 ### 저장 모델
-
 ```text
-models/ml/seoul_boar_risk_model.pkl
-models/ml/seoul_boar_stats.pkl
-```
-
-### 학습 결과
-
-```text
-Accuracy: 0.7222
-```
-
-```text
-high f1-score: 0.76
-low  f1-score: 0.80
-medium f1-score: 0.32
+models/ml/risk_model.pkl
 ```
 
 ### 필요 이유
-
-사용자가 직접 입력하는 값은 자치구와 월로 단순하게 유지하되, 백엔드에서 과거 출현 통계 feature를 자동 결합하여 더 안정적인 예측을 제공한다.
+규칙 기반 라벨 생성만으로 끝내면 머신러닝 프로젝트로 보이기 어렵다. 변환된 정형 데이터를 기반으로 실제 분류 모델을 학습해야 1차 ML 프로젝트가 완성된다.
 
 ---
 
 ## 7. F-005 위험도 예측 API
 
 ### URL
-
 ```http
 POST /api/risk/predict
 ```
 
 ### Request 예시
-
 ```json
 {
-  "district": "은평구",
-  "month": 10
+  "day": "night",
+  "camera_type": "IR",
+  "weather": "cloudy",
+  "location": "대산농원",
+  "time_zone": "night",
+  "season": "fall",
+  "object_count": 2,
+  "max_bbox_area_ratio": 0.0235,
+  "avg_bbox_area_ratio": 0.0206
 }
 ```
 
 ### Response 예시
-
 ```json
 {
-  "success": true,
-  "result": {
-    "risk_level": "high",
-    "message": "해당 자치구와 월 조건에서는 과거 멧돼지 출현 신고가 많은 편입니다. 산림 인근, 하천 주변, 야간 이동에 주의하세요.",
-    "input": {
-      "district": "은평구",
-      "month": 10,
-      "year": 2024,
-      "season": "가을"
-    },
-    "stats": {
-      "district_total_count": 275,
-      "district_avg_count": 7.64,
-      "month_avg_count": 3.2,
-      "district_month_avg_count": 9.0,
-      "district_total_capture": 272
-    }
-  },
-  "saved_to_db": false
+  "risk_level": "medium",
+  "message": "야간에 사족보행 야생동물이 탐지되어 주의가 필요합니다."
 }
 ```
 
 ### 필요 이유
-
-Flask 웹 화면과 ML 모델을 연결하기 위해 API 형태의 예측 기능이 필요하다.
+Flask 웹 서비스와 ML 모델을 연결하기 위해 API 형태의 예측 기능이 필요하다.
 
 ---
 
 ## 8. F-006 위험도 예측 화면
 
 ### URL
-
 ```http
-GET /risk
+GET /risk/
+POST /risk/
 ```
 
 ### 입력 항목
-
-| 항목 | 설명 |
-|---|---|
-| 자치구 | 서울시 멧돼지 신고 데이터에 포함된 자치구 |
-| 월 | 1월~12월 |
+주야간 여부, 카메라 타입, 날씨, 위치, 시간대, 계절, 객체 수, bbox 면적 비율
 
 ### 출력 항목
-
-| 항목 | 설명 |
-|---|---|
-| 위험도 | low / medium / high |
-| 위험도 메시지 | 대응 안내 문구 |
-| 자치구 | 입력 자치구 |
-| 월 | 입력 월 |
-| 계절 | 월 기준 자동 변환 |
-| 과거 신고 통계 | 자치구 총 출현, 월평균, 포획 통계 등 |
+위험도, 위험도 설명, 대응 메시지
 
 ### 필요 이유
-
 비전문가가 API를 직접 호출하지 않고 웹 화면에서 결과를 확인할 수 있어야 한다.
 
 ---
@@ -243,44 +204,39 @@ GET /risk
 ## 9. F-007 YOLO 라벨 변환
 
 ### 기능 설명
-
 AI Hub JSON의 bbox 좌표를 YOLO 학습용 txt 라벨로 변환한다.
 
 ### 출력 형식
-
 ```text
 class_id x_center y_center width height
 ```
 
 ### 클래스 정책
+초기 모델은 사족보행 야생동물을 하나의 클래스로 통합한다.
 
 ```text
 class 0 = quadruped
 ```
 
 ### 필요 이유
-
-2차 프로젝트의 핵심은 이미지 기반 객체 탐지이다. AI Hub 데이터는 이미지와 bbox 라벨을 제공하므로 YOLO 학습에 적합하다.
+멧돼지 데이터가 대부분이고 고라니, 반달가슴곰, 멧토끼 데이터는 적다. 클래스별 불균형을 줄이고, 현장에서 위험 가능 사족보행 객체가 있는지 먼저 탐지하기 위해 단일 클래스가 적합하다.
 
 ---
 
 ## 10. F-008 이미지 탐지 API
 
 ### URL
-
 ```http
 POST /api/vision/detect
 ```
 
 ### Request
-
 ```text
 multipart/form-data
 image: 업로드 이미지
 ```
 
 ### Response 예시
-
 ```json
 {
   "detected": true,
@@ -298,18 +254,19 @@ image: 업로드 이미지
 }
 ```
 
+### 필요 이유
+2차 프로젝트의 핵심은 이미지 기반 객체 탐지이다. REST API로 구현하면 Flask 서비스와 프론트엔드에서 쉽게 사용할 수 있다.
+
 ---
 
 ## 11. F-009 탐지 결과 이미지 저장
 
 ### 저장 경로
-
 ```text
 static/outputs/
 ```
 
 ### 필요 이유
-
 사용자가 탐지 결과를 시각적으로 확인할 수 있어야 하며, 추후 결과 조회와 상담 기능에서도 활용할 수 있다.
 
 ---
@@ -317,74 +274,129 @@ static/outputs/
 ## 12. F-010 LLM 상담
 
 ### URL
-
 ```http
 POST /api/chat
 ```
 
 ### Request 예시
-
 ```json
 {
   "risk_level": "high",
-  "district": "은평구",
-  "month": 10,
   "detected": true,
   "animal_group": "quadruped",
-  "message": "산 근처에서 멧돼지 같은 동물을 봤습니다."
+  "object_count": 2,
+  "time_zone": "night",
+  "message": "농장 근처에서 멧돼지 같은 동물이 보였습니다."
 }
 ```
 
 ### Response 예시
-
 ```json
 {
-  "answer": "은평구 10월은 과거 신고 기준 멧돼지 출현 위험도가 높게 예측됩니다. 동물에게 접근하지 말고 안전한 장소로 이동한 뒤 관할 기관에 신고하세요."
+  "answer": "야간에 사족보행 야생동물이 여러 마리 탐지된 상황이므로 직접 접근하지 말고 안전한 실내로 이동한 뒤 위치와 시간을 기록하세요."
 }
 ```
+
+### 필요 이유
+예측과 탐지 결과만 제공하면 사용자가 다음 행동을 판단하기 어렵다. LLM 상담은 결과를 사람이 이해할 수 있는 대응 지침으로 바꿔준다.
 
 ---
 
 ## 13. F-011 SLM 경량 상담
 
 ### 기능 설명
-
 저사양 또는 현장 환경에서 짧고 빠른 대응 상담을 제공한다.
 
 ### 입력
-
-- 자치구
-- 월
-- 위험도
-- 탐지 여부
-- 사용자 상황 설명
+동물 그룹, 위험도, 시간대, 객체 수, 위치 상황
 
 ### 출력
+핵심 대응 요약, 접근 금지 여부, 신고 필요 여부
 
-- 핵심 대응 요약
-- 접근 금지 여부
-- 신고 필요 여부
+### 필요 이유
+4차 프로젝트는 3차 LLM과 차별화되어야 한다. SLM은 작은 모델로 빠른 현장 대응을 제공하는 방향이 적합하다.
 
 ---
 
-## 14. F-012 회원가입/로그인
+## 14. F-012 Oracle DB 결과 저장
 
-### 회원가입 URL
+### 주요 테이블
+| 테이블 | 설명 |
+|---|---|
+| USERS | 사용자 정보 |
+| RISK_PREDICTION_RESULT | 1차 위험도 예측 결과 |
+| VISION_DETECTION_RESULT | 2차 이미지 탐지 결과 |
+| CHAT_LOG | 3차/4차 상담 로그 |
 
+### 필요 이유
+기존 Oracle XE와 python-oracledb 경험을 활용할 수 있고, Flask + Oracle DB 연동은 웹 서비스 프로젝트의 완성도를 높인다.
+
+---
+
+## 15. F-013 결과 조회
+
+### 기능 설명
+로그인 사용자가 이전 예측, 탐지, 상담 결과를 조회할 수 있다.
+
+### 출력 항목
+분석 날짜, 분석 유형, 위험도, 객체 수, 탐지 여부, 상담 요약
+
+### 필요 이유
+야생동물 출현은 반복 기록 관리가 중요하므로, 결과 저장과 조회는 서비스 완성도를 높인다.
+
+
+---
+
+## 23. 인증 및 회원 기반 예측 저장 기능 추가 명세
+
+### F-020 회원가입
+
+#### URL
 ```http
 GET /auth/register
 POST /auth/register
 ```
 
-### 로그인 URL
+#### 입력 항목
+| 항목 | 설명 |
+|---|---|
+| username | 로그인 아이디 |
+| password | 비밀번호 |
+| password_confirm | 비밀번호 확인 |
+| name | 사용자 이름 |
+| organization | 소속 기관/단체 |
+| role | 사용자 유형 |
 
+#### 처리 절차
+1. 필수 입력값을 검증한다.
+2. 비밀번호와 비밀번호 확인 값이 같은지 확인한다.
+3. 비밀번호를 해시 처리한다.
+4. `USERS` 테이블에 사용자 정보를 저장한다.
+5. 회원가입 성공 후 로그인 페이지로 이동한다.
+
+---
+
+### F-021 로그인
+
+#### URL
 ```http
 GET /auth/login
 POST /auth/login
 ```
 
-### 세션 저장 값
+#### 입력 항목
+| 항목 | 설명 |
+|---|---|
+| username | 로그인 아이디 |
+| password | 비밀번호 |
 
+#### 처리 절차
+1. `username`으로 사용자를 조회한다.
+2. 입력 비밀번호와 저장된 `password_hash`를 검증한다.
+3. 성공 시 Flask session에 사용자 정보를 저장한다.
+4. 위험도 예측 화면으로 이동한다.
+
+#### 세션 저장 값
 ```text
 user_id
 username
@@ -392,68 +404,145 @@ name
 role
 ```
 
-### 정책
-
-- 비밀번호는 해시 저장
-- 이메일은 MVP에서 제외
-- 비회원도 위험도 예측은 가능
-- 로그인 사용자는 예측 기록 저장 가능
-
 ---
 
-## 15. F-013 Oracle DB 결과 저장
+### F-022 로그아웃
 
-### 저장 대상
-
-```text
-seoul_boar_risk_log
+#### URL
+```http
+GET /auth/logout
 ```
 
-### 저장 항목
-
-- user_id
-- district
-- month
-- year
-- season
-- risk_level
-- risk_message
-- district_total_count
-- district_avg_count
-- month_avg_count
-- district_month_avg_count
-- district_total_capture
-
-### 정책
-
-| 사용자 상태 | 예측 | DB 저장 |
-|---|---|---|
-| 비회원 | 가능 | 불가 |
-| 로그인 사용자 | 가능 | 가능 |
+#### 처리 절차
+1. session을 초기화한다.
+2. 메인 화면 또는 위험도 예측 화면으로 이동한다.
 
 ---
 
-## 16. F-014 결과 조회
+### F-023 비회원 예측 체험
 
-### URL
+#### 기능 설명
+로그인하지 않은 사용자가 위험도 예측을 체험할 수 있다.
 
+#### 정책
+| 항목 | 정책 |
+|---|---|
+| `/risk` 접근 | 허용 |
+| 예측 실행 | 허용 |
+| 결과 출력 | 허용 |
+| Oracle DB 저장 | 저장 안 함 |
+| 기록 조회 | 로그인 필요 |
+
+#### 화면 안내
+```text
+비회원 체험 모드입니다. 예측은 가능하지만 기록은 저장되지 않습니다. 로그인하면 예측 기록을 저장할 수 있습니다.
+```
+
+---
+
+### F-024 로그인 사용자 예측 저장
+
+#### 기능 설명
+로그인 사용자가 위험도 예측을 실행하면 예측 결과를 Oracle DB에 저장한다.
+
+#### 저장 조건
+```python
+if "user_id" in session:
+    save_risk_prediction_log(...)
+else:
+    saved_to_db = False
+```
+
+#### 저장 테이블
+```text
+risk_prediction_log
+```
+
+#### 저장 컬럼
+| 컬럼 | 설명 |
+|---|---|
+| user_id | 로그인 사용자 ID |
+| day | 주야간 |
+| camera_type | 카메라 유형 |
+| weather | 날씨 |
+| location | 위치 |
+| time_zone | 시간대 |
+| season | 계절 |
+| object_count | 객체 수 |
+| max_bbox_area_ratio | 최대 bbox 면적 비율 |
+| avg_bbox_area_ratio | 평균 bbox 면적 비율 |
+| risk_level | 예측 위험도 |
+| risk_message | 대응 메시지 |
+| created_at | 생성일 |
+
+---
+
+### F-025 예측 기록 조회
+
+#### URL
 ```http
 GET /risk/history
 ```
 
-### 정책
+#### 기능 설명
+로그인 사용자가 본인의 예측 기록을 조회한다.
 
-- 비로그인: 로그인 페이지 이동
-- 일반 로그인 사용자: 본인 기록만 조회
-- official/admin: 전체 기록 조회로 확장 예정
+#### 접근 정책
+| 사용자 상태 | 처리 |
+|---|---|
+| 비로그인 | 로그인 페이지로 이동 |
+| 로그인 | 본인 예측 기록 조회 |
+| admin/official | 전체 기록 조회 기능으로 확장 가능 |
 
-### 출력 항목
+#### 출력 항목
+날짜, 위치, 날씨, 시간대, 계절, 객체 수, bbox 비율, 위험도, 대응 메시지
 
-- 생성일
-- 자치구
-- 월
-- 계절
-- 위험도
-- 자치구 총 출현개체수
-- 자치구·월 평균 출현개체수
-- 대응 메시지
+---
+
+### F-026 관리자 전체 예측 기록 조회
+
+#### URL
+```http
+GET /admin/risk/logs
+```
+
+#### 기능 설명
+관리자 또는 지자체 담당자가 전체 예측 기록을 조회한다.
+
+#### 접근 권한
+```text
+admin
+official
+```
+
+#### 현재 상태
+MVP 이후 확장 기능으로 설계한다.
+
+---
+
+## 24. 추가 DB 구조
+
+### USERS
+| 컬럼 | 타입 | 설명 |
+|---|---|---|
+| user_id | NUMBER | 사용자 ID |
+| username | VARCHAR2(50) | 로그인 아이디 |
+| password_hash | VARCHAR2(255) | 해시 처리된 비밀번호 |
+| name | VARCHAR2(50) | 사용자 이름 |
+| organization | VARCHAR2(100) | 소속 |
+| role | VARCHAR2(30) | 사용자 유형 |
+| created_at | DATE | 가입일 |
+
+### RISK_PREDICTION_LOG 변경
+| 컬럼 | 타입 | 설명 |
+|---|---|---|
+| user_id | NUMBER | 예측을 실행한 사용자 ID |
+
+### 사용자 유형
+| role | 설명 |
+|---|---|
+| citizen | 일반 사용자 |
+| farmer | 농장주 |
+| ranger | 산림관리원 |
+| official | 지자체 담당자 |
+| admin | 관리자 |
