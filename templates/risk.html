@@ -1,440 +1,438 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <title>WildGuard AI - 위험도 예측</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f6f8;
-            color: #222;
-        }
+{% extends "base.html" %}
 
-        .container {
-            width: 900px;
-            margin: 40px auto;
-        }
+{% block title %}위험도 예측 | WildGuard AI{% endblock %}
 
-        .header {
-            background: #1f2937;
-            color: white;
-            padding: 30px;
-            border-radius: 12px;
-            margin-bottom: 24px;
-        }
+{% block extra_style %}
+<style>
+    .risk-hero {
+        background: linear-gradient(135deg, #0f172a, #1e3a8a);
+        color: white;
+        padding: 64px 0;
+    }
 
-        .header h1 {
-            margin: 0 0 10px 0;
-        }
+    .risk-hero h1 {
+        font-weight: 900;
+        letter-spacing: -1px;
+    }
 
-        .header p {
-            margin: 0;
-            color: #d1d5db;
-        }
+    .risk-card {
+        background: white;
+        border: 0;
+        border-radius: 22px;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+        padding: 28px;
+    }
 
-        .card {
-            background: white;
-            padding: 24px;
-            border-radius: 12px;
-            margin-bottom: 24px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
+    .input-card {
+        position: sticky;
+        top: 24px;
+    }
 
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 18px;
-        }
+    .form-label {
+        font-weight: 800;
+        color: #0f172a;
+    }
 
-        .form-group {
-            display: flex;
-            flex-direction: column;
-        }
+    .form-select {
+        border-radius: 14px;
+        padding: 12px;
+    }
 
-        label {
-            font-weight: bold;
-            margin-bottom: 6px;
-        }
+    .notice-box {
+        border-radius: 18px;
+        padding: 18px;
+        border: 1px solid;
+    }
 
-        input, select {
-            padding: 10px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            font-size: 14px;
-        }
+    .notice-success {
+        background: #dcfce7;
+        border-color: #86efac;
+        color: #166534;
+    }
 
-        button {
-            margin-top: 24px;
-            width: 100%;
-            padding: 14px;
-            background: #2563eb;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-        }
+    .notice-warning {
+        background: #fef3c7;
+        border-color: #fcd34d;
+        color: #92400e;
+    }
 
-        button:hover {
-            background: #1d4ed8;
-        }
+    .result-card {
+        display: none;
+    }
 
-        .result-card {
-            display: none;
-        }
+    .error-box {
+        display: none;
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fca5a5;
+        border-radius: 16px;
+        padding: 16px;
+        margin-bottom: 24px;
+    }
 
-        .risk-badge {
-            display: inline-block;
-            padding: 8px 14px;
-            border-radius: 999px;
-            font-weight: bold;
-            color: white;
-            margin-bottom: 12px;
-        }
+    .risk-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 18px;
+        border-radius: 999px;
+        font-weight: 900;
+        font-size: 18px;
+    }
 
-        .risk-low {
-            background: #16a34a;
-        }
+    .risk-low {
+        background: #dcfce7;
+        color: #166534;
+    }
 
-        .risk-medium {
-            background: #f59e0b;
-        }
+    .risk-medium {
+        background: #fef3c7;
+        color: #92400e;
+    }
 
-        .risk-high {
-            background: #dc2626;
-        }
+    .risk-high {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
 
-        .message {
-            font-size: 18px;
-            line-height: 1.6;
-            margin-bottom: 20px;
-        }
+    .risk-visual {
+        margin: 22px 0 28px 0;
+    }
 
-        .summary {
-            background: #f8fafc;
-            padding: 16px;
-            border-radius: 8px;
-            border: 1px solid #e5e7eb;
-        }
+    .risk-title-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
 
-        .summary h3 {
-            margin-top: 0;
-        }
+    .risk-percent {
+        font-size: 28px;
+        font-weight: 900;
+    }
 
-        .summary ul {
-            margin-bottom: 0;
-        }
+    .progress-wrap {
+        width: 100%;
+        height: 30px;
+        background: #e5e7eb;
+        border-radius: 999px;
+        overflow: hidden;
+    }
 
-        .error {
-            display: none;
-            background: #fee2e2;
-            color: #991b1b;
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 24px;
-        }
+    .progress-bar {
+        height: 100%;
+        width: 0%;
+        border-radius: 999px;
+        transition: width 0.4s ease;
+    }
 
-        .nav {
-            margin-bottom: 20px;
-        }
+    .progress-low {
+        background: #16a34a;
+    }
 
-        .nav a {
-            color: #2563eb;
-            text-decoration: none;
-            font-weight: bold;
-        }
+    .progress-medium {
+        background: #f59e0b;
+    }
 
-        .nav a:hover {
-            text-decoration: underline;
-        }
+    .progress-high {
+        background: #dc2626;
+    }
 
-        .notice {
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 24px;
-            line-height: 1.6;
-        }
+    .metric-box {
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        padding: 18px;
+        height: 100%;
+    }
 
-        .notice.success,
-        .save-status.success {
-            background: #dcfce7;
-            border: 1px solid #86efac;
-            color: #166534;
-        }
+    .metric-label {
+        font-size: 14px;
+        color: #64748b;
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
 
-        .notice.warning,
-        .save-status.warning {
-            background: #fef3c7;
-            border: 1px solid #fcd34d;
-            color: #92400e;
-        }
+    .metric-value {
+        font-size: 26px;
+        font-weight: 900;
+        color: #0f172a;
+    }
 
-        .notice a {
-            color: inherit;
-            font-weight: bold;
-        }
+    .metric-help {
+        font-size: 13px;
+        color: #64748b;
+        margin-top: 4px;
+    }
 
-        .save-status {
-            border-radius: 8px;
-            margin: 0 0 16px 0;
-            padding: 12px;
-        }
+    .message-box {
+        background: #f8fafc;
+        border-left: 5px solid #1e3a8a;
+        border-radius: 14px;
+        padding: 18px;
+        font-size: 17px;
+        line-height: 1.7;
+    }
 
-        #saveStatus {
-            display: none;
-        }
-        .risk-visual {
-            margin: 18px 0 24px 0;
-        }
+    .stats-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        padding: 20px;
+        height: 100%;
+    }
 
-        .risk-title-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
+    .stats-value {
+        font-size: 24px;
+        font-weight: 900;
+        color: #1e3a8a;
+    }
 
-        .risk-percent {
-            font-size: 22px;
-            font-weight: bold;
-        }
+    .stats-label {
+        color: #64748b;
+        font-size: 14px;
+        margin-top: 4px;
+    }
 
-        .progress-wrap {
-            width: 100%;
-            height: 28px;
-            background: #e5e7eb;
-            border-radius: 999px;
-            overflow: hidden;
-        }
+    .action-box {
+        padding: 20px;
+        border-radius: 18px;
+        line-height: 1.7;
+    }
 
-        .progress-bar {
-            height: 100%;
-            width: 0%;
-            border-radius: 999px;
-            transition: width 0.4s ease;
-        }
+    .action-low {
+        background: #dcfce7;
+        border: 1px solid #86efac;
+        color: #166534;
+    }
 
-        .progress-low {
-            background: #16a34a;
-        }
+    .action-medium {
+        background: #fef3c7;
+        border: 1px solid #fcd34d;
+        color: #92400e;
+    }
 
-        .progress-medium {
-            background: #f59e0b;
-        }
+    .action-high {
+        background: #fee2e2;
+        border: 1px solid #fca5a5;
+        color: #991b1b;
+    }
 
-        .progress-high {
-            background: #dc2626;
-        }
+    .save-status {
+        display: none;
+        border-radius: 14px;
+        padding: 14px;
+        margin-bottom: 18px;
+        font-weight: 700;
+    }
 
-        .metric-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 14px;
-            margin: 20px 0;
-        }
+    .save-status.success {
+        background: #dcfce7;
+        border: 1px solid #86efac;
+        color: #166534;
+    }
 
-        .metric-box {
-            background: #f8fafc;
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            padding: 16px;
-        }
+    .save-status.warning {
+        background: #fef3c7;
+        border: 1px solid #fcd34d;
+        color: #92400e;
+    }
+</style>
+{% endblock %}
 
-        .metric-box h4 {
-            margin: 0 0 8px 0;
-            font-size: 14px;
-            color: #4b5563;
-        }
-
-        .metric-value {
-            font-size: 24px;
-            font-weight: bold;
-        }
-
-        .analysis-box {
-            background: #f8fafc;
-            border-left: 5px solid #2563eb;
-            padding: 16px;
-            border-radius: 8px;
-            margin-top: 20px;
-        }
-
-        .action-box {
-            padding: 16px;
-            border-radius: 8px;
-            margin-top: 18px;
-            line-height: 1.6;
-        }
-
-        .action-low {
-            background: #dcfce7;
-            border: 1px solid #86efac;
-            color: #166534;
-        }
-
-        .action-medium {
-            background: #fef3c7;
-            border: 1px solid #fcd34d;
-            color: #92400e;
-        }
-
-        .action-high {
-            background: #fee2e2;
-            border: 1px solid #fca5a5;
-            color: #991b1b;
-        }
-
-    </style>
-</head>
-<body>
-<div class="container">
-
-    <div class="nav">
-        <a href="/">← 메인으로 돌아가기</a>
+{% block content %}
+<section class="risk-hero">
+    <div class="container">
+        <span class="badge bg-light text-primary mb-3">1차 ML 위험도 예측</span>
+        <h1 class="display-5">서울시 멧돼지 출현 위험도 예측</h1>
+        <p class="lead mt-3 mb-0">
+            서울시 멧돼지 민원신고 현황 데이터를 기반으로 자치구와 월 조건의 출현 위험도를 예측합니다.
+        </p>
     </div>
+</section>
 
-    <div class="header">
-        <h1>WildGuard AI 위험도 예측</h1>
-        <p>AI Hub 야생동물 라벨링 메타데이터 기반으로 출현 위험도를 예측합니다.</p>
-    </div>
+<section class="container wg-section">
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="risk-card input-card">
+                <h3 class="fw-bold mb-2">상황 입력</h3>
+                <p class="text-muted">
+                    자치구와 월만 선택하면 과거 신고 통계를 자동으로 반영해 위험도를 예측합니다.
+                </p>
 
-    {% if session.get("user_id") %}
-        <div class="notice success">
-            {{ session.get("name") }}님으로 로그인 중입니다. 예측 결과가 DB에 저장됩니다.
+                {% if session.get("user_id") %}
+                    <div class="notice-box notice-success mb-4">
+                        <strong>{{ session.get("name") }}님 로그인 중</strong><br>
+                        예측 결과가 DB에 저장됩니다.
+                    </div>
+                {% else %}
+                    <div class="notice-box notice-warning mb-4">
+                        <strong>비회원 체험 모드</strong><br>
+                        예측은 가능하지만 기록은 저장되지 않습니다.
+                        <a href="/auth/login" class="fw-bold text-reset">로그인</a>하면 기록을 저장할 수 있습니다.
+                    </div>
+                {% endif %}
+
+                <form id="riskForm">
+                    <div class="mb-3">
+                        <label class="form-label">자치구</label>
+                        <select class="form-select" name="district">
+                            <option value="은평구">은평구</option>
+                            <option value="도봉구">도봉구</option>
+                            <option value="성북구">성북구</option>
+                            <option value="강북구">강북구</option>
+                            <option value="종로구">종로구</option>
+                            <option value="서대문구">서대문구</option>
+                            <option value="노원구">노원구</option>
+                            <option value="중랑구">중랑구</option>
+                            <option value="송파구">송파구</option>
+                            <option value="광진구">광진구</option>
+                            <option value="강동구">강동구</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">월</label>
+                        <select class="form-select" name="month">
+                            <option value="1">1월</option>
+                            <option value="2">2월</option>
+                            <option value="3">3월</option>
+                            <option value="4">4월</option>
+                            <option value="5">5월</option>
+                            <option value="6">6월</option>
+                            <option value="7">7월</option>
+                            <option value="8">8월</option>
+                            <option value="9">9월</option>
+                            <option value="10" selected>10월</option>
+                            <option value="11">11월</option>
+                            <option value="12">12월</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        위험도 예측
+                    </button>
+                </form>
+            </div>
         </div>
-    {% else %}
-        <div class="notice warning">
-            비회원 체험 모드입니다. 예측은 가능하지만 기록은 저장되지 않습니다.
-            <a href="/auth/login">로그인</a>하면 예측 기록을 저장할 수 있습니다.
-        </div>
-    {% endif %}
 
-    <div class="card">
-        <h2>상황 입력</h2>
+        <div class="col-lg-8">
+            <div id="errorBox" class="error-box"></div>
 
-        <form id="riskForm">
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>자치구</label>
-                    <select name="district">
-                        <option value="은평구">은평구</option>
-                        <option value="도봉구">도봉구</option>
-                        <option value="성북구">성북구</option>
-                        <option value="강북구">강북구</option>
-                        <option value="종로구">종로구</option>
-                        <option value="서대문구">서대문구</option>
-                        <option value="노원구">노원구</option>
-                        <option value="중랑구">중랑구</option>
-                        <option value="송파구">송파구</option>
-                        <option value="광진구">광진구</option>
-                        <option value="강동구">강동구</option>
-                    </select>
+            <div id="resultCard" class="risk-card result-card">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+                    <div>
+                        <h2 class="fw-bold mb-1">예측 결과</h2>
+                        <p class="text-muted mb-0">
+                            모델 예측 결과와 과거 신고 통계를 함께 표시합니다.
+                        </p>
+                    </div>
+                    <div id="riskBadge" class="risk-badge risk-low mt-3 mt-md-0">-</div>
                 </div>
 
-                <div class="form-group">
-                    <label>월</label>
-                    <select name="month">
-                        <option value="1">1월</option>
-                        <option value="2">2월</option>
-                        <option value="3">3월</option>
-                        <option value="4">4월</option>
-                        <option value="5">5월</option>
-                        <option value="6">6월</option>
-                        <option value="7">7월</option>
-                        <option value="8">8월</option>
-                        <option value="9">9월</option>
-                        <option value="10" selected>10월</option>
-                        <option value="11">11월</option>
-                        <option value="12">12월</option>
-                    </select>
+                <div id="saveStatus" class="save-status"></div>
+
+                <div class="risk-visual">
+                    <div class="risk-title-row">
+                        <strong>위험도 수준</strong>
+                        <span id="riskPercent" class="risk-percent">0%</span>
+                    </div>
+
+                    <div class="progress-wrap">
+                        <div id="riskProgressBar" class="progress-bar"></div>
+                    </div>
+                </div>
+
+                <div id="message" class="message-box mb-4"></div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="metric-box">
+                            <div class="metric-label">자치구</div>
+                            <div id="metricDistrict" class="metric-value">-</div>
+                            <div class="metric-help">서울시 멧돼지 신고 기준 지역</div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="metric-box">
+                            <div class="metric-label">월</div>
+                            <div id="metricMonth" class="metric-value">-</div>
+                            <div class="metric-help">입력한 예측 월</div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="metric-box">
+                            <div class="metric-label">계절</div>
+                            <div id="metricSeason" class="metric-value">-</div>
+                            <div class="metric-help">월 기준 자동 분류</div>
+                        </div>
+                    </div>
+                </div>
+
+                <h4 class="fw-bold mb-3">과거 신고 통계</h4>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="stats-card">
+                            <div id="statDistrictTotal" class="stats-value">-</div>
+                            <div class="stats-label">해당 자치구의 누적 신고 출현 개체수</div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="stats-card">
+                            <div id="statDistrictAvg" class="stats-value">-</div>
+                            <div class="stats-label">해당 자치구의 평균 신고 출현 개체수</div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="stats-card">
+                            <div id="statMonthAvg" class="stats-value">-</div>
+                            <div class="stats-label">서울시 전체 기준 해당 월 평균 출현 개체수</div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="stats-card">
+                            <div id="statDistrictMonthAvg" class="stats-value">-</div>
+                            <div class="stats-label">해당 자치구의 같은 월 평균 출현 개체수</div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="stats-card">
+                            <div id="statDistrictCapture" class="stats-value">-</div>
+                            <div class="stats-label">해당 자치구의 누적 포획 개체수</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="actionBox" class="action-box mb-4">
+                    <strong>대응 안내</strong>
+                    <p id="actionMessage" class="mb-0 mt-2"></p>
+                </div>
+
+                <div class="message-box">
+                    <h4 class="fw-bold">분석 요약</h4>
+                    <ul class="mb-2">
+                        <li>자치구: <span id="summaryDistrict"></span></li>
+                        <li>월: <span id="summaryMonth"></span>월</li>
+                        <li>계절: <span id="summarySeason"></span></li>
+                    </ul>
+                    <p class="mb-0">
+                        서울시 멧돼지 민원신고 현황 데이터를 기반으로 해당 자치구와 월 조건의 출현 위험도를 예측했습니다.
+                    </p>
                 </div>
             </div>
-            <button type="submit">위험도 예측</button>
-        </form>
-    </div>
-
-    <div id="errorBox" class="error"></div>
-
-    <div id="resultCard" class="card result-card">
-        <h2>예측 결과</h2>
-
-        <div id="saveStatus" class="save-status"></div>
-
-        {% if result %}
-            {% if saved_to_db %}
-                <p class="save-status success">예측 결과가 Oracle DB에 저장되었습니다.</p>
-            {% else %}
-                <p class="save-status warning">비회원 체험 결과입니다. DB에는 저장되지 않았습니다.</p>
-            {% endif %}
-        {% endif %}
-
-        <div id="riskBadge" class="risk-badge">-</div>
-
-        <div class="risk-visual">
-            <div class="risk-title-row">
-                <strong>위험도 수준</strong>
-                <span id="riskPercent" class="risk-percent">0%</span>
-            </div>
-
-            <div class="progress-wrap">
-                <div id="riskProgressBar" class="progress-bar"></div>
-            </div>
-        </div>
-
-        <div id="message" class="message"></div>
-
-        <div class="metric-grid">
-            <div class="metric-box">
-                <h4>자치구</h4>
-                <div id="metricDistrict" class="metric-value">-</div>
-                <small>서울시 멧돼지 민원신고 기준 지역</small>
-            </div>
-
-            <div class="metric-box">
-                <h4>월</h4>
-                <div id="metricMonth" class="metric-value">-</div>
-                <small>멧돼지 출현 신고가 발생한 월별 조건</small>
-            </div>
-
-            <div class="metric-box">
-                <h4>계절</h4>
-                <div id="metricSeason" class="metric-value">-</div>
-                <small>월 정보를 기준으로 자동 분류된 계절</small>
-            </div>
-        </div>
-
-        <div class="analysis-box">
-            <h3>과거 신고 통계</h3>
-            <ul>
-                <li>자치구 총 출현개체수: <strong><span id="statDistrictTotal">-</span>건</strong></li>
-                <li>자치구 평균 출현개체수: <strong><span id="statDistrictAvg">-</span>건</strong></li>
-                <li>해당 월 서울 평균 출현개체수: <strong><span id="statMonthAvg">-</span>건</strong></li>
-                <li>자치구·월 평균 출현개체수: <strong><span id="statDistrictMonthAvg">-</span>건</strong></li>
-                <li>자치구 총 포획개체수: <strong><span id="statDistrictCapture">-</span>건</strong></li>
-            </ul>
-        </div>
-        <div id="actionBox" class="action-box">
-            <strong>대응 안내</strong>
-            <p id="actionMessage" style="margin-bottom: 0;"></p>
-        </div>
-
-        <div class="analysis-box">
-            <h3>분석 요약</h3>
-            <ul>
-                <li>자치구: <span id="summaryDistrict"></span></li>
-                <li>월: <span id="summaryMonth"></span>월</li>
-                <li>계절: <span id="summarySeason"></span></li>
-            </ul>
-            <p style="margin-bottom: 0;">
-                서울시 멧돼지 민원신고 현황 데이터를 기반으로 해당 자치구와 월 조건의 출현 위험도를 예측했습니다.
-            </p>
         </div>
     </div>
+</section>
+{% endblock %}
 
-</div>
-
+{% block extra_script %}
 <script>
     const form = document.getElementById("riskForm");
     const resultCard = document.getElementById("resultCard");
@@ -445,6 +443,7 @@
     const riskProgressBar = document.getElementById("riskProgressBar");
     const actionBox = document.getElementById("actionBox");
     const actionMessage = document.getElementById("actionMessage");
+    const message = document.getElementById("message");
 
     form.addEventListener("submit", async function (event) {
         event.preventDefault();
@@ -479,17 +478,14 @@
             const riskLevel = prediction.risk_level;
 
             riskBadge.className = "risk-badge";
+            riskProgressBar.className = "progress-bar";
+            actionBox.className = "action-box mb-4";
 
             let percent = 0;
-            let label = "";
             let actionText = "";
-
-            riskProgressBar.className = "progress-bar";
-            actionBox.className = "action-box";
 
             if (riskLevel === "low") {
                 percent = 30;
-                label = "낮음";
                 riskBadge.classList.add("risk-low");
                 riskBadge.textContent = "✅ 위험도 낮음";
                 riskProgressBar.classList.add("progress-low");
@@ -497,7 +493,6 @@
                 actionText = "현재 위험도는 낮은 편입니다. 다만 야생동물 출현 가능성은 있으므로 기본적인 주의는 필요합니다.";
             } else if (riskLevel === "medium") {
                 percent = 60;
-                label = "보통";
                 riskBadge.classList.add("risk-medium");
                 riskBadge.textContent = "⚠️ 위험도 보통";
                 riskProgressBar.classList.add("progress-medium");
@@ -505,21 +500,20 @@
                 actionText = "주의가 필요한 상황입니다. 주변을 확인하고 야간 이동이나 단독 접근은 피하는 것이 좋습니다.";
             } else if (riskLevel === "high") {
                 percent = 90;
-                label = "높음";
                 riskBadge.classList.add("risk-high");
                 riskBadge.textContent = "🚨 위험도 높음";
                 riskProgressBar.classList.add("progress-high");
                 actionBox.classList.add("action-high");
-                actionText = "고위험 상황입니다. 현장 접근을 제한하고 필요 시 관리자 또는 지자체 담당자에게 신고하세요.";
+                actionText = "고위험 상황입니다. 산림 인근 접근을 피하고 필요 시 관리자 또는 지자체 담당자에게 신고하세요.";
             } else {
                 percent = 50;
-                label = riskLevel;
                 riskBadge.textContent = riskLevel;
             }
 
             riskPercent.textContent = percent + "%";
             riskProgressBar.style.width = percent + "%";
             actionMessage.textContent = actionText;
+            message.textContent = prediction.message;
 
             document.getElementById("summaryDistrict").textContent = prediction.input.district;
             document.getElementById("summaryMonth").textContent = prediction.input.month;
@@ -532,19 +526,19 @@
             const stats = prediction.stats || {};
 
             document.getElementById("statDistrictTotal").textContent =
-                stats.district_total_count ?? "-";
+                (stats.district_total_count ?? "-") + "건";
 
             document.getElementById("statDistrictAvg").textContent =
-                stats.district_avg_count ?? "-";
-            
+                (stats.district_avg_count ?? "-") + "건";
+
             document.getElementById("statMonthAvg").textContent =
-                stats.month_avg_count ?? "-";
+                (stats.month_avg_count ?? "-") + "건";
 
             document.getElementById("statDistrictMonthAvg").textContent =
-                stats.district_month_avg_count ?? "-";
+                (stats.district_month_avg_count ?? "-") + "건";
 
             document.getElementById("statDistrictCapture").textContent =
-                stats.district_total_capture ?? "-";
+                (stats.district_total_capture ?? "-") + "건";
 
             if (result.saved_to_db) {
                 saveStatus.textContent = "예측 결과가 Oracle DB에 저장되었습니다.";
@@ -553,9 +547,13 @@
                 saveStatus.textContent = "비회원 체험 결과입니다. DB에는 저장되지 않았습니다.";
                 saveStatus.className = "save-status warning";
             }
-            saveStatus.style.display = "block";
 
+            saveStatus.style.display = "block";
             resultCard.style.display = "block";
+
+            resultCard.scrollIntoView({
+                behavior: "smooth"
+            });
 
         } catch (error) {
             errorBox.textContent = error.message;
@@ -563,5 +561,4 @@
         }
     });
 </script>
-</body>
-</html>
+{% endblock %}
