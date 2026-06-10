@@ -309,7 +309,7 @@
                         </select>
                     </div>
 
-                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                    <button id="predictButton" type="submit" class="btn btn-primary btn-lg w-100">
                         위험도 예측
                     </button>
                 </form>
@@ -444,10 +444,15 @@
     const actionBox = document.getElementById("actionBox");
     const actionMessage = document.getElementById("actionMessage");
     const message = document.getElementById("message");
+    const predictButton = document.getElementById("predictButton");
 
     form.addEventListener("submit", async function (event) {
         event.preventDefault();
-
+        predictButton.disabled = true;
+        predictButton.innerHTML = `
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            예측 중...
+        `;
         errorBox.style.display = "none";
         resultCard.style.display = "none";
         saveStatus.style.display = "none";
@@ -558,6 +563,9 @@
         } catch (error) {
             errorBox.textContent = error.message;
             errorBox.style.display = "block";
+        } finally {
+            predictButton.disabled = false;
+            predictButton.innerHTML = "위험도 예측";
         }
     });
 </script>
