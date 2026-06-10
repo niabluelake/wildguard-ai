@@ -2,7 +2,7 @@ from ultralytics import YOLO
 import os
 import uuid
 import cv2
-
+from PIL import Image
 MODEL_PATH = "models/vision/best.pt"
 UPLOAD_DIR = "static/vision_uploads"
 OUTPUT_DIR = "static/vision_outputs"
@@ -59,13 +59,24 @@ def get_risk_level(conf):
     return "safe"
 
 def run_prediction(file):
-    ext = os.path.splitext(file.filename)[1]
-    filename = f"{uuid.uuid4()}{ext}"
+    ext = os.path.splitext(file.filename)[1].lower()
 
-    upload_path = os.path.join(UPLOAD_DIR, filename)
-    file.save(upload_path)
+    if ext not in [".jpg", ".jpeg", ".png", ".webp"]:
+        raise ValueError("지원하지 않는 이미지 형식입니다. jpg, jpeg, png, webp만 가능합니다.")
 
-    results = model(upload_path, conf=0.5)
+    # 업로드 이미지를 먼저 jpg로 변환해서 저장
+    input_filename = f"{uuid.uuid4().hex}.jpg"
+    upload_path = os.path.join(UPLOAD_DIR, input_filename)
+
+    try:
+        image = Image.open(file.stream)
+        image = image.convert("RGB")
+        image.save(upload_path, format="JPEG", quality=95)
+
+    except Exception as error:
+        raise ValueError(f"이미지 파일을 읽을 수 없습니다. 다른 jpg/png 파일로 테스트해주세요. 원인: {error}")
+
+    results = model(upload_path, conf=0.25)
     result = results[0]
 
     detections = []
@@ -78,16 +89,24 @@ def run_prediction(file):
         detections.append({
             "class_name": result.names[cls_id],
             "confidence": round(conf, 4),
-            "bbox": [round(x1,2), round(y1,2), round(x2,2), round(y2,2)],
+            "bbox": [
+                round(x1, 2),
+                round(y1, 2),
+                round(x2, 2),
+                round(y2, 2)
+            ],
             "risk_level": get_risk_level(conf)
         })
 
-    # 결과 이미지 저장
     result_image = result.plot()
-    output_filename = f"result_{filename}"
+
+    output_filename = f"result_{uuid.uuid4().hex}.jpg"
     output_path = os.path.join(OUTPUT_DIR, output_filename)
 
-    cv2.imwrite(output_path, result_image)
+    success = cv2.imwrite(output_path, result_image)
+
+    if not success:
+        raise RuntimeError("결과 이미지 저장에 실패했습니다.")
 
     return {
         "detected": len(detections) > 0,
