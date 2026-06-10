@@ -14,16 +14,33 @@ def video_predict():
 
     file = request.files["video"]
     result = run_video_prediction(file)
-
+    result["success"] = True
     return jsonify(result)
 
 @vision_bp.route("/api/vision/predict", methods=["POST"])
-def predict():
-    if "image" not in request.files:
-        return jsonify({"error": "image required"}), 400
+def predict_image():
+    try:
+        if "image" not in request.files:
+            return jsonify({
+                "success": False,
+                "message": "이미지 파일이 없습니다."
+            }), 400
 
-    file = request.files["image"]
-    result = run_prediction(file)
+        file = request.files["image"]
 
-    return jsonify(result)
+        if file.filename == "":
+            return jsonify({
+                "success": False,
+                "message": "선택된 이미지 파일이 없습니다."
+            }), 400
 
+        result = run_prediction(file)
+        result["success"] = True
+
+        return jsonify(result)
+
+    except Exception as error:
+        return jsonify({
+            "success": False,
+            "message": f"이미지 분석 중 오류가 발생했습니다: {error}"
+        }), 500

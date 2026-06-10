@@ -235,7 +235,7 @@ function uploadImage() {
     .then(data => {
         document.getElementById("imageLoading").style.display = "none";
 
-        if (!data.success) {
+        if (data.success === false) {
             alert(data.message || "이미지 분석 실패");
             return;
         }
