@@ -276,7 +276,13 @@ def parse_json_file(json_path):
         "avg_bbox_area_ratio": avg_bbox_area_ratio,
     }
 
-    row["risk_level"] = make_risk_level(row)
+    risk_score = make_risk_score(row)
+
+    row["risk_score"] = risk_score
+    row["risk_grade"] = make_risk_grade(risk_score)
+
+    # 기존 API나 코드가 risk_level을 참조할 수 있으므로 일단 호환용으로 유지
+    row["risk_level"] = row["risk_grade"]
     return row
 
 
