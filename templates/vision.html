@@ -115,11 +115,12 @@
                 <h3 class="fw-bold">이미지 분석</h3>
                 <p class="text-muted">
                     현장 사진을 업로드하면 탐지 객체 수, 신뢰도, 위험 단계, 결과 이미지를 확인할 수 있습니다.
+                    로그인한 경우 분석 기록 저장 대상이 됩니다.
                 </p>
 
                 <div class="upload-zone mt-4">
-                    <input class="form-control mb-3" type="file" id="imageInput" accept="image/*">
-                    <button class="btn btn-success px-4" onclick="uploadImage()">이미지 분석 시작</button>
+                    <input class="form-control mb-3" type="file" id="imageInput" accept=".jpg,.jpeg,.png,.webp">
+                    <button id="imageButton" class="btn btn-success px-4" onclick="uploadImage()">이미지 분석 시작</button>
                     <span id="imageLoading" class="ms-3 text-muted" style="display:none;">분석 중...</span>
                 </div>
             </div>
@@ -130,11 +131,12 @@
                 <h3 class="fw-bold">짧은 영상 분석</h3>
                 <p class="text-muted">
                     영상은 전체 프레임이 아니라 일정 간격의 프레임을 추출하여 데모 분석합니다.
+                    로그인한 경우 분석 기록 저장 대상이 됩니다.
                 </p>
 
                 <div class="upload-zone mt-4">
-                    <input class="form-control mb-3" type="file" id="videoInput" accept="video/*">
-                    <button class="btn btn-primary px-4" onclick="uploadVideo()">영상 분석 시작</button>
+                    <input class="form-control mb-3" type="file" id="videoInput" accept=".mp4,.avi,.mov,.mkv,.webm">
+                    <button id="videoButton" class="btn btn-primary px-4" onclick="uploadVideo()">영상 분석 시작</button>
                     <span id="videoLoading" class="ms-3 text-muted" style="display:none;">분석 중...</span>
                 </div>
             </div>
@@ -151,6 +153,8 @@
             </div>
             <div id="riskBadge" class="risk-pill risk-safe mt-3 mt-md-0">SAFE</div>
         </div>
+
+        <div id="imageSaveStatus" class="alert alert-warning rounded-4" style="display: none;"></div>
 
         <div class="row g-3 mb-4">
             <div class="col-md-4">
@@ -175,7 +179,7 @@
             </div>
         </div>
 
-        <div class="alert alert-secondary">
+        <div class="alert alert-secondary rounded-4">
             <strong>탐지 상세:</strong>
             <span id="bboxInfo">탐지 없음</span>
         </div>
@@ -188,10 +192,12 @@
         <p class="text-muted">
             일정 간격으로 추출한 프레임의 탐지 결과 이미지입니다.
         </p>
+
+        <div id="videoSaveStatus" class="alert alert-warning rounded-4" style="display: none;"></div>
+
         <div id="videoResults" class="video-grid mt-3"></div>
     </div>
 </section>
-
 {% endblock %}
 
 {% block extra_script %}
@@ -213,8 +219,40 @@ function setRiskBadge(level) {
     }
 }
 
+function setImageSaveStatus(savedToDb) {
+    const imageSaveStatus = document.getElementById("imageSaveStatus");
+
+    if (savedToDb) {
+        imageSaveStatus.className = "alert alert-success rounded-4";
+        imageSaveStatus.innerText = "로그인 상태입니다. 이미지 분석 기록 저장 대상입니다.";
+    } else {
+        imageSaveStatus.className = "alert alert-warning rounded-4";
+        imageSaveStatus.innerText = "비회원 분석 결과입니다. DB에는 저장되지 않습니다.";
+    }
+
+    imageSaveStatus.style.display = "block";
+}
+
+function setVideoSaveStatus(savedToDb) {
+    const videoSaveStatus = document.getElementById("videoSaveStatus");
+
+    if (savedToDb) {
+        videoSaveStatus.className = "alert alert-success rounded-4";
+        videoSaveStatus.innerText = "로그인 상태입니다. 영상 분석 기록 저장 대상입니다.";
+    } else {
+        videoSaveStatus.className = "alert alert-warning rounded-4";
+        videoSaveStatus.innerText = "비회원 분석 결과입니다. DB에는 저장되지 않습니다.";
+    }
+
+    videoSaveStatus.style.display = "block";
+}
+
 function uploadImage() {
     const file = document.getElementById("imageInput").files[0];
+    const imageButton = document.getElementById("imageButton");
+    const imageLoading = document.getElementById("imageLoading");
+    const imageResultPanel = document.getElementById("imageResultPanel");
+    const imageSaveStatus = document.getElementById("imageSaveStatus");
 
     if (!file) {
         alert("이미지를 선택해줘.");
@@ -224,8 +262,11 @@ function uploadImage() {
     const formData = new FormData();
     formData.append("image", file);
 
-    document.getElementById("imageLoading").style.display = "inline";
-    document.getElementById("imageResultPanel").style.display = "none";
+    imageLoading.style.display = "inline";
+    imageButton.disabled = true;
+    imageButton.innerText = "분석 중...";
+    imageResultPanel.style.display = "none";
+    imageSaveStatus.style.display = "none";
 
     fetch("/api/vision/predict", {
         method: "POST",
@@ -233,7 +274,7 @@ function uploadImage() {
     })
     .then(res => res.json())
     .then(data => {
-        document.getElementById("imageLoading").style.display = "none";
+        imageLoading.style.display = "none";
 
         if (data.success === false) {
             alert(data.message || "이미지 분석 실패");
@@ -247,32 +288,42 @@ function uploadImage() {
         const level = det ? det.risk_level.toLowerCase() : "safe";
         const confidence = det ? det.confidence : 0;
 
-        document.getElementById("imageResultPanel").style.display = "block";
+        imageResultPanel.style.display = "block";
         document.getElementById("resultImage").src = data.result_image_url;
 
-        document.getElementById("metricCount").innerText = `${data.count}개`;
+        document.getElementById("metricCount").innerText = `${data.count || 0}개`;
         document.getElementById("metricConfidence").innerText = `${Math.round(confidence * 100)}%`;
 
         setRiskBadge(level);
+        setImageSaveStatus(Boolean(data.saved_to_db));
 
         document.getElementById("bboxInfo").innerText =
             det
                 ? `클래스: ${det.class_name}, bbox: [${det.bbox.join(", ")}]`
-                : "탐지된 야생동물이 없습니다.";
+                : "분석은 완료됐지만 탐지된 야생동물이 없습니다.";
 
-        document.getElementById("imageResultPanel").scrollIntoView({
+        imageResultPanel.scrollIntoView({
             behavior: "smooth"
         });
     })
     .catch(err => {
         console.error(err);
-        document.getElementById("imageLoading").style.display = "none";
+        imageLoading.style.display = "none";
         alert("이미지 분석 중 오류가 발생했습니다.");
+    })
+    .finally(() => {
+        imageButton.disabled = false;
+        imageButton.innerText = "이미지 분석 시작";
     });
 }
 
 function uploadVideo() {
     const file = document.getElementById("videoInput").files[0];
+    const videoButton = document.getElementById("videoButton");
+    const loading = document.getElementById("videoLoading");
+    const panel = document.getElementById("videoPanel");
+    const container = document.getElementById("videoResults");
+    const videoSaveStatus = document.getElementById("videoSaveStatus");
 
     if (!file) {
         alert("영상을 업로드하세요.");
@@ -282,13 +333,12 @@ function uploadVideo() {
     const formData = new FormData();
     formData.append("video", file);
 
-    const loading = document.getElementById("videoLoading");
-    const panel = document.getElementById("videoPanel");
-    const container = document.getElementById("videoResults");
-
     loading.style.display = "inline";
+    videoButton.disabled = true;
+    videoButton.innerText = "분석 중...";
     panel.style.display = "none";
     container.innerHTML = "";
+    videoSaveStatus.style.display = "none";
 
     fetch("/api/vision/video", {
         method: "POST",
@@ -300,13 +350,19 @@ function uploadVideo() {
         panel.style.display = "block";
         container.innerHTML = "";
 
-        if (!data.success) {
+        if (data.success === false) {
+            videoSaveStatus.style.display = "none";
             container.innerHTML = `<p class="text-danger">${data.message || "영상 분석 실패"}</p>`;
             return;
         }
 
+        setVideoSaveStatus(Boolean(data.saved_to_db));
+
         if (!data.frames || data.frames.length === 0) {
             container.innerHTML = "<p class='text-muted'>분석된 프레임이 없습니다.</p>";
+            panel.scrollIntoView({
+                behavior: "smooth"
+            });
             return;
         }
 
@@ -329,7 +385,12 @@ function uploadVideo() {
         console.error(err);
         loading.style.display = "none";
         panel.style.display = "block";
+        videoSaveStatus.style.display = "none";
         container.innerHTML = "<p class='text-danger'>영상 분석 중 오류가 발생했습니다.</p>";
+    })
+    .finally(() => {
+        videoButton.disabled = false;
+        videoButton.innerText = "영상 분석 시작";
     });
 }
 </script>
