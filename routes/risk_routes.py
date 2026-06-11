@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, session
+from flask import Blueprint, jsonify, request
 
 from services.risk_prediction_service import predict_risk
 
@@ -17,7 +17,18 @@ def predict():
                 "message": "JSON 요청 데이터가 없습니다.",
             }), 400
 
-        required_fields = ["district", "month"]
+        required_fields = [
+            "day",
+            "camera_type",
+            "weather",
+            "location",
+            "time_zone",
+            "season",
+            "species",
+            "object_count",
+            "max_bbox_area_ratio",
+            "avg_bbox_area_ratio",
+        ]
 
         missing_fields = [
             field for field in required_fields
@@ -30,10 +41,7 @@ def predict():
                 "message": f"필수 입력이 없습니다: {missing_fields}",
             }), 400
 
-        result = predict_risk({
-            "district": input_data.get("district"),
-            "month": input_data.get("month"),
-        })
+        result = predict_risk(input_data)
 
         saved_to_db = False
 

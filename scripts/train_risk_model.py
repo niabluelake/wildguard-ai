@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 import joblib
@@ -34,17 +33,16 @@ def main():
     target_col = "risk_score"
 
     categorical_features = [
-        "weather",
-        "season",
-        "time_zone",
         "day",
         "camera_type",
+        "weather",
         "location",
+        "time_zone",
+        "season",
         "species",
     ]
 
     numeric_features = [
-        "hour",
         "object_count",
         "max_bbox_area_ratio",
         "avg_bbox_area_ratio",
@@ -84,8 +82,8 @@ def main():
     )
 
     model = RandomForestRegressor(
-        n_estimators=200,
-        max_depth=12,
+        n_estimators=500,
+        max_depth=None,
         random_state=42,
         n_jobs=-1
     )
@@ -102,8 +100,6 @@ def main():
 
     print("[INFO] Evaluate model")
     y_pred = pipeline.predict(X_test)
-
-    # 위험 점수는 0~100 범위이므로 예측값도 범위 제한
     y_pred = np.clip(y_pred, 0, 100)
 
     mae = mean_absolute_error(y_test, y_pred)

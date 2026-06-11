@@ -151,6 +151,108 @@ def make_risk_level(row):
         return "medium"
     return "low"
 
+def get_species_score(species_text):
+    species_weights = {
+        "멧토끼": 3,
+        "고라니": 10,
+        "멧돼지": 18,
+        "반달가슴곰": 35,
+    }
+
+    if not species_text:
+        return 8
+
+    species_list = [item.strip() for item in str(species_text).split(",")]
+
+    return max(
+        [species_weights.get(species, 8) for species in species_list],
+        default=8
+    )
+
+
+def make_risk_score(row):
+    """
+    AI Hub 야생동물 메타데이터를 기반으로 0~100 위험 점수를 생성한다.
+    """
+
+    base_score = 3
+
+    species = row.get("species", "unknown")
+    time_zone = str(row.get("time_zone", "unknown")).lower()
+    weather = str(row.get("weather", "unknown")).lower()
+    camera_type = str(row.get("camera_type", "unknown")).upper()
+    day = str(row.get("day", "unknown")).lower()
+
+    try:
+        object_count = float(row.get("object_count", 0))
+    except (TypeError, ValueError):
+        object_count = 0
+
+    try:
+        max_bbox_area_ratio = float(row.get("max_bbox_area_ratio", 0))
+    except (TypeError, ValueError):
+        max_bbox_area_ratio = 0
+
+    try:
+        avg_bbox_area_ratio = float(row.get("avg_bbox_area_ratio", 0))
+    except (TypeError, ValueError):
+        avg_bbox_area_ratio = 0
+
+    species_score = get_species_score(species)
+
+    time_weights = {
+        "dawn": 8,
+        "day": 0,
+        "evening": 6,
+        "night": 10,
+        "unknown": 3,
+    }
+    time_score = time_weights.get(time_zone, 3)
+
+    weather_weights = {
+        "sunny": 0,
+        "cloudy": 3,
+        "rain": 7,
+        "snow": 8,
+        "unknown": 2,
+    }
+    weather_score = weather_weights.get(weather, 2)
+
+    object_count_score = max(0, object_count - 1) * 4
+    object_count_score = min(object_count_score, 12)
+
+    bbox_score = (max_bbox_area_ratio * 600) + (avg_bbox_area_ratio * 250)
+    bbox_score = min(bbox_score, 30)
+
+    night_camera_score = 0
+
+    if camera_type == "IR" and time_zone in ["night", "dawn"]:
+        night_camera_score += 4
+
+    if day == "night":
+        night_camera_score += 3
+
+    risk_score = (
+        base_score
+        + species_score
+        + time_score
+        + weather_score
+        + object_count_score
+        + bbox_score
+        + night_camera_score
+    )
+
+    risk_score = max(0, min(100, risk_score))
+
+    return round(risk_score, 2)
+
+
+def make_risk_grade(risk_score):
+    if risk_score < 45:
+        return "low"
+    if risk_score < 70:
+        return "medium"
+    return "high"
 
 def parse_datetime_parts(image_info):
     date_created = image_info.get("date_created") or ""

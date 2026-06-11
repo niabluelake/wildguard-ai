@@ -6,129 +6,131 @@ import pandas as pd
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-MODEL_PATH = BASE_DIR / "models" / "ml" / "seoul_boar_risk_model.pkl"
-STATS_PATH = BASE_DIR / "models" / "ml" / "seoul_boar_stats.pkl"
+MODEL_PATH = BASE_DIR / "models" / "ml" / "risk_regression_model.pkl"
 
 
-def get_season(month: int) -> str:
-    if month in [3, 4, 5]:
-        return "spring"
-    if month in [6, 7, 8]:
-        return "summer"
-    if month in [9, 10, 11]:
-        return "fall"
-    return "winter"
+def score_to_grade(score: float) -> str:
+    if score < 45:
+        return "low"
+    if score < 70:
+        return "medium"
+    return "high"
 
 
-def get_korean_season(season: str) -> str:
-    season_map = {
-        "spring": "봄",
-        "summer": "여름",
-        "fall": "가을",
-        "winter": "겨울",
-    }
-    return season_map.get(season, season)
+def get_risk_message(risk_grade: str) -> str:
+    if risk_grade == "high":
+        return "위험 점수가 높습니다. 야생동물 근접 출현 가능성이 있으므로 현장 접근을 주의하고 주변 시설물을 점검하세요."
+
+    if risk_grade == "medium":
+        return "중간 수준의 위험입니다. 출현 조건을 확인하고 반복 관측 여부를 모니터링하세요."
+
+    return "낮은 수준의 위험입니다. 즉각적인 대응보다는 관측 기록을 유지하는 것이 좋습니다."
 
 
-def get_risk_message(risk_level: str) -> str:
-    if risk_level == "high":
-        return "해당 자치구와 월 조건에서는 과거 멧돼지 출현 신고가 많은 편입니다. 산림 인근, 하천 주변, 야간 이동에 주의하세요."
-    if risk_level == "medium":
-        return "해당 조건에서는 멧돼지 출현 가능성이 보통 수준입니다. 야외 이동 시 주변을 확인하고 단독 접근은 피하는 것이 좋습니다."
-    return "해당 조건에서는 과거 멧돼지 출현 신고가 적은 편입니다. 다만 야생동물 출현 가능성은 있으므로 기본적인 주의는 필요합니다."
-
-
-def find_value(df, filters, column_name, default_value=0):
-    result = df.copy()
-
-    for key, value in filters.items():
-        result = result[result[key] == value]
-
-    if result.empty:
-        return default_value
-
-    return result.iloc[0][column_name]
-
-
-def predict_risk(input_data: dict) -> dict:
+def load_model_artifact():
     if not MODEL_PATH.exists():
         raise FileNotFoundError(f"모델 파일이 없습니다: {MODEL_PATH}")
 
-    if not STATS_PATH.exists():
-        raise FileNotFoundError(f"통계 파일이 없습니다: {STATS_PATH}")
+    artifact = joblib.load(MODEL_PATH)
 
-    model = joblib.load(MODEL_PATH)
-    stats = joblib.load(STATS_PATH)
+    if isinstance(artifact, dict):
+        return artifact
 
-    district = input_data.get("district")
-    month = int(input_data.get("month"))
-    year = int(input_data.get("year", stats["latest_year"]))
+    # 혹시 예전 방식처럼 모델만 저장된 경우를 대비
+    return {
+        "model": artifact,
+        "model_type": "regression",
+        "metrics": {},
+        "feature_cols": [
+            "day",
+            "camera_type",
+            "weather",
+            "location",
+            "time_zone",
+            "season",
+            "species",
+            "object_count",
+            "max_bbox_area_ratio",
+            "avg_bbox_area_ratio",
+        ],
+    }
 
-    season = get_season(month)
 
-    district_stats = stats["district_stats"]
-    month_stats = stats["month_stats"]
-    district_month_stats = stats["district_month_stats"]
+def normalize_input(input_data: dict, feature_cols: list) -> pd.DataFrame:
+    row = {}
 
-    district_total_count = find_value(
-        district_stats,
-        {"자치구": district},
-        "district_total_count",
+    default_values = {
+        "day": "unknown",
+        "camera_type": "unknown",
+        "weather": "unknown",
+        "location": "unknown",
+        "time_zone": "unknown",
+        "season": "unknown",
+        "species": "unknown",
+        "object_count": 1,
+        "max_bbox_area_ratio": 0,
+        "avg_bbox_area_ratio": 0,
+    }
+
+    for col in feature_cols:
+        row[col] = input_data.get(col, default_values.get(col, "unknown"))
+
+    numeric_cols = [
+        "object_count",
+        "max_bbox_area_ratio",
+        "avg_bbox_area_ratio",
+    ]
+
+    for col in numeric_cols:
+        if col in row:
+            try:
+                row[col] = float(row[col])
+            except (TypeError, ValueError):
+                row[col] = 0
+
+    return pd.DataFrame([row])
+
+
+def predict_risk(input_data: dict) -> dict:
+    artifact = load_model_artifact()
+
+    model = artifact["model"]
+    feature_cols = artifact.get(
+        "feature_cols",
+        [
+            "day",
+            "camera_type",
+            "weather",
+            "location",
+            "time_zone",
+            "season",
+            "species",
+            "object_count",
+            "max_bbox_area_ratio",
+            "avg_bbox_area_ratio",
+        ],
     )
 
-    district_avg_count = find_value(
-        district_stats,
-        {"자치구": district},
-        "district_avg_count",
-    )
+    input_df = normalize_input(input_data, feature_cols)
 
-    district_total_capture = find_value(
-        district_stats,
-        {"자치구": district},
-        "district_total_capture",
-    )
+    predicted_score = float(model.predict(input_df)[0])
+    predicted_score = max(0, min(100, predicted_score))
+    predicted_score = round(predicted_score, 2)
 
-    month_avg_count = find_value(
-        month_stats,
-        {"월": month},
-        "month_avg_count",
-    )
-
-    district_month_avg_count = find_value(
-        district_month_stats,
-        {"자치구": district, "월": month},
-        "district_month_avg_count",
-    )
-
-    input_df = pd.DataFrame([{
-        "연도": year,
-        "자치구": district,
-        "월": month,
-        "계절": season,
-        "district_total_count": district_total_count,
-        "district_avg_count": district_avg_count,
-        "month_avg_count": month_avg_count,
-        "district_month_avg_count": district_month_avg_count,
-        "district_total_capture": district_total_capture,
-    }])
-
-    risk_level = model.predict(input_df)[0]
-    message = get_risk_message(risk_level)
+    risk_grade = score_to_grade(predicted_score)
+    metrics = artifact.get("metrics", {})
 
     return {
-        "risk_level": risk_level,
-        "message": message,
-        "input": {
-            "district": district,
-            "month": month,
-            "year": year,
-            "season": get_korean_season(season),
+        "predicted_score": predicted_score,
+        "risk_score": predicted_score,
+        "risk_grade": risk_grade,
+        "risk_level": risk_grade,
+        "model_type": artifact.get("model_type", "regression"),
+        "message": get_risk_message(risk_grade),
+        "metrics": {
+            "mae": round(float(metrics.get("mae", 0)), 4),
+            "rmse": round(float(metrics.get("rmse", 0)), 4),
+            "r2": round(float(metrics.get("r2", 0)), 4),
         },
-        "stats": {
-            "district_total_count": int(district_total_count),
-            "district_avg_count": round(float(district_avg_count), 2),
-            "month_avg_count": round(float(month_avg_count), 2),
-            "district_month_avg_count": round(float(district_month_avg_count), 2),
-            "district_total_capture": int(district_total_capture),
-        }
+        "input": input_data,
     }
