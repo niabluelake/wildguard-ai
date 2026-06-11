@@ -1,10 +1,13 @@
+import os
 from pathlib import Path
 
 import joblib
+import numpy as np
 import pandas as pd
+
 from sklearn.compose import ColumnTransformer
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
@@ -13,70 +16,78 @@ from sklearn.preprocessing import OneHotEncoder
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 DATA_PATH = BASE_DIR / "data" / "aihub" / "ml_dataset" / "aihub_wildlife_metadata.csv"
-MODEL_DIR = BASE_DIR / "models" / "ml"
-MODEL_PATH = MODEL_DIR / "risk_model.pkl"
-
-# 일반 사용자가 직접 입력할 수 있는 상황 정보만 사용
-CATEGORICAL_FEATURES = [
-    "day",
-    "weather",
-    "location",
-    "time_zone",
-    "season",
-]
-
-NUMERIC_FEATURES = []
-
-TARGET = "risk_level"
+MODEL_PATH = BASE_DIR / "models" / "ml" / "risk_regression_model.pkl"
 
 
-def load_dataset():
-    if not DATA_PATH.exists():
-        raise FileNotFoundError(f"학습 데이터가 없습니다: {DATA_PATH}")
-
-    df = pd.read_csv(DATA_PATH, encoding="utf-8-sig")
-
-    required_columns = CATEGORICAL_FEATURES + NUMERIC_FEATURES + [TARGET]
-    missing_columns = [col for col in required_columns if col not in df.columns]
-
-    if missing_columns:
-        raise ValueError(f"필수 컬럼이 없습니다: {missing_columns}")
-
-    df = df.dropna(subset=required_columns).copy()
-    return df
+def score_to_grade(score):
+    if score < 45:
+        return "low"
+    if score < 70:
+        return "medium"
+    return "high"
 
 
-def train_model():
-    df = load_dataset()
+def main():
+    print("[INFO] Load dataset")
+    df = pd.read_csv(DATA_PATH)
 
-    feature_columns = CATEGORICAL_FEATURES + NUMERIC_FEATURES
+    target_col = "risk_score"
 
-    X = df[feature_columns]
-    y = df[TARGET]
+    categorical_features = [
+        "weather",
+        "season",
+        "time_zone",
+        "day",
+        "camera_type",
+        "location",
+        "species",
+    ]
+
+    numeric_features = [
+        "hour",
+        "object_count",
+        "max_bbox_area_ratio",
+        "avg_bbox_area_ratio",
+    ]
+
+    feature_cols = categorical_features + numeric_features
+
+    required_cols = feature_cols + [target_col]
+    missing_cols = [col for col in required_cols if col not in df.columns]
+
+    if missing_cols:
+        raise ValueError(f"필수 컬럼이 없습니다: {missing_cols}")
+
+    df = df.dropna(subset=[target_col])
+
+    X = df[feature_cols].copy()
+    y = df[target_col].copy()
+
+    for col in categorical_features:
+        X[col] = X[col].fillna("unknown").astype(str)
+
+    for col in numeric_features:
+        X[col] = pd.to_numeric(X[col], errors="coerce").fillna(0)
 
     X_train, X_test, y_train, y_test = train_test_split(
         X,
         y,
         test_size=0.2,
-        random_state=42,
-        stratify=y,
+        random_state=42
     )
-
-    transformers = [
-        ("cat", OneHotEncoder(handle_unknown="ignore"), CATEGORICAL_FEATURES),
-    ]
-
-    if NUMERIC_FEATURES:
-        transformers.append(("num", "passthrough", NUMERIC_FEATURES))
 
     preprocessor = ColumnTransformer(
-        transformers=transformers
+        transformers=[
+            ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_features),
+            ("num", "passthrough", numeric_features),
+        ]
     )
 
-    model = RandomForestClassifier(
-        n_estimators=150,
+    model = RandomForestRegressor(
+        n_estimators=200,
+        max_depth=12,
         random_state=42,
-        class_weight="balanced",
+        n_jobs=-1
     )
 
     pipeline = Pipeline(
@@ -86,26 +97,60 @@ def train_model():
         ]
     )
 
+    print("[INFO] Train regression model")
     pipeline.fit(X_train, y_train)
 
+    print("[INFO] Evaluate model")
     y_pred = pipeline.predict(X_test)
 
-    accuracy = accuracy_score(y_test, y_pred)
-    report = classification_report(y_test, y_pred)
+    # 위험 점수는 0~100 범위이므로 예측값도 범위 제한
+    y_pred = np.clip(y_pred, 0, 100)
 
-    MODEL_DIR.mkdir(parents=True, exist_ok=True)
-    joblib.dump(pipeline, MODEL_PATH)
+    mae = mean_absolute_error(y_test, y_pred)
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+    r2 = r2_score(y_test, y_pred)
 
-    print("[INFO] 상황 기반 야생동물 출현 위험도 예측 모델 학습 완료")
-    print("[INFO] 사용 feature:", feature_columns)
-    print("[INFO] 데이터 크기:", df.shape)
-    print("[INFO] 모델 저장 위치:", MODEL_PATH)
+    print(f"MAE: {mae:.4f}")
+    print(f"RMSE: {rmse:.4f}")
+    print(f"R2 Score: {r2:.4f}")
     print()
-    print("[INFO] Accuracy:", accuracy)
+
+    sample_result = pd.DataFrame({
+        "actual_score": y_test.head(10).values,
+        "predicted_score": y_pred[:10],
+    })
+
+    sample_result["actual_grade"] = sample_result["actual_score"].apply(score_to_grade)
+    sample_result["predicted_grade"] = sample_result["predicted_score"].apply(score_to_grade)
+
+    print("[INFO] Sample predictions")
+    print(sample_result)
     print()
-    print("[INFO] Classification Report")
-    print(report)
+
+    artifact = {
+        "model": pipeline,
+        "model_type": "regression",
+        "target_col": target_col,
+        "feature_cols": feature_cols,
+        "categorical_features": categorical_features,
+        "numeric_features": numeric_features,
+        "metrics": {
+            "mae": mae,
+            "rmse": rmse,
+            "r2": r2,
+        },
+        "grade_rule": {
+            "low": "0 <= score < 45",
+            "medium": "45 <= score < 70",
+            "high": "70 <= score <= 100",
+        },
+    }
+
+    MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
+    joblib.dump(artifact, MODEL_PATH)
+
+    print(f"[INFO] Save model: {MODEL_PATH}")
 
 
 if __name__ == "__main__":
-    train_model()
+    main()

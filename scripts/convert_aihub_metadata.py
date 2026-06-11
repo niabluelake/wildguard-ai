@@ -6,7 +6,7 @@ import pandas as pd
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-JSON_DIR = BASE_DIR / "data" / "aihub_json" / "TL-quadruped"
+JSON_DIR = BASE_DIR / "data" / "aihub" / "aihub_json" / "TL-quadruped"
 OUTPUT_PATH = BASE_DIR / "data" / "aihub" / "ml_dataset" / "aihub_wildlife_metadata.csv"
 
 
@@ -76,34 +76,121 @@ def calc_bbox_area_ratio(bbox, image_width, image_height):
         return 0
 
 
-def make_risk_level(row):
-    score = 0
+def get_species_score(species_text):
+    species_weights = {
+        "멧토끼": 3,
+        "고라니": 10,
+        "멧돼지": 18,
+        "반달가슴곰": 35,
+    }
 
-    # 객체 수가 많을수록 위험도 증가
-    if row["object_count"] >= 3:
-        score += 2
-    elif row["object_count"] == 2:
-        score += 1
+    if not species_text:
+        return 8
 
-    # bbox가 클수록 카메라에 가까운 상황으로 판단
-    if row["max_bbox_area_ratio"] >= 0.05:
-        score += 2
-    elif row["max_bbox_area_ratio"] >= 0.02:
-        score += 1
+    species_list = [item.strip() for item in str(species_text).split(",")]
 
-    # 야간/새벽이면 대응 위험 증가
-    if row["time_zone"] in ["night", "dawn"]:
-        score += 1
+    # 여러 종이 한 이미지에 있으면 가장 위험한 종 기준
+    return max(
+        [species_weights.get(species, 8) for species in species_list],
+        default=8
+    )
 
-    # IR 카메라 + night 조합이면 야간 출현 상황으로 판단
-    if row["day"] == "night":
-        score += 1
 
-    if score >= 4:
-        return "high"
-    if score >= 2:
+def make_risk_score(row):
+    """
+    AI Hub 야생동물 메타데이터를 기반으로 0~100 위험 점수를 생성한다.
+
+    실제 사고/피해 점수 라벨이 없기 때문에,
+    동물 종, 시간대, 날씨, 객체 수, bbox 면적 비율, 야간 촬영 여부에
+    도메인 가중치를 부여해 초기 risk_score를 설계한다.
+    """
+
+    base_score = 3
+
+    species = row.get("species", "unknown")
+    time_zone = str(row.get("time_zone", "unknown")).lower()
+    weather = str(row.get("weather", "unknown")).lower()
+    camera_type = str(row.get("camera_type", "unknown")).upper()
+    day = str(row.get("day", "unknown")).lower()
+
+    try:
+        object_count = float(row.get("object_count", 0))
+    except (TypeError, ValueError):
+        object_count = 0
+
+    try:
+        max_bbox_area_ratio = float(row.get("max_bbox_area_ratio", 0))
+    except (TypeError, ValueError):
+        max_bbox_area_ratio = 0
+
+    try:
+        avg_bbox_area_ratio = float(row.get("avg_bbox_area_ratio", 0))
+    except (TypeError, ValueError):
+        avg_bbox_area_ratio = 0
+
+    # 1. 동물 종 위험도
+    species_score = get_species_score(species)
+
+    # 2. 시간대 위험도
+    time_weights = {
+        "dawn": 8,
+        "day": 0,
+        "evening": 6,
+        "night": 10,
+        "unknown": 3,
+    }
+    time_score = time_weights.get(time_zone, 3)
+
+    # 3. 날씨 위험도
+    weather_weights = {
+        "sunny": 0,
+        "cloudy": 3,
+        "rain": 7,
+        "snow": 8,
+        "unknown": 2,
+    }
+    weather_score = weather_weights.get(weather, 2)
+
+    # 4. 객체 수 위험도
+    # 1마리는 기본 관측으로 보고, 2마리 이상부터 위험도 증가
+    object_count_score = max(0, object_count - 1) * 4
+    object_count_score = min(object_count_score, 12)
+
+    # 5. bbox 면적 비율 위험도
+    # 카메라 화면에서 동물이 크게 잡힐수록 근접 출현으로 판단
+    bbox_score = (max_bbox_area_ratio * 600) + (avg_bbox_area_ratio * 250)
+    bbox_score = min(bbox_score, 30)
+
+    # 6. 야간 촬영 보정
+    night_camera_score = 0
+
+    if camera_type == "IR" and time_zone in ["night", "dawn"]:
+        night_camera_score += 4
+
+    if day == "night":
+        night_camera_score += 3
+
+    risk_score = (
+        base_score
+        + species_score
+        + time_score
+        + weather_score
+        + object_count_score
+        + bbox_score
+        + night_camera_score
+    )
+
+    risk_score = max(0, min(100, risk_score))
+
+    return round(risk_score, 2)
+
+
+def make_risk_grade(risk_score):
+    if risk_score < 45:
+        return "low"
+    if risk_score < 70:
         return "medium"
-    return "low"
+    return "high"
 
 
 def parse_aihub_json(json_path):
@@ -177,7 +264,13 @@ def parse_aihub_json(json_path):
         "avg_bbox_area_ratio": avg_bbox_area_ratio,
     }
 
-    row["risk_level"] = make_risk_level(row)
+    risk_score = make_risk_score(row)
+
+    row["risk_score"] = risk_score
+    row["risk_grade"] = make_risk_grade(risk_score)
+
+    # 기존 API나 코드가 risk_level을 참조할 수 있으므로 일단 호환용으로 유지
+    row["risk_level"] = row["risk_grade"]
 
     return row
 
@@ -215,6 +308,14 @@ if __name__ == "__main__":
 
     print("[INFO] risk_level 분포")
     print(df["risk_level"].value_counts())
+    print()
+
+    print("[INFO] risk_score 통계")
+    print(df["risk_score"].describe())
+    print()
+
+    print("[INFO] risk_grade 분포")
+    print(df["risk_grade"].value_counts())
     print()
 
     print("[INFO] species 분포")
