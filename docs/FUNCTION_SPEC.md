@@ -1,548 +1,587 @@
-> 문서 업데이트: 회원가입/로그인, 비회원 체험 모드, 로그인 사용자 DB 저장 정책을 추가 반영함.
-
 # WildGuard AI 기능명세서
 
 ## 1. 문서 개요
 
-본 문서는 WildGuard AI의 기능을 정의한다. 현재 프로젝트는 AI Hub 야생동물 라벨링 데이터를 기반으로 1차 정형 데이터 ML, 2차 YOLO 객체 탐지, 3차 LLM 상담, 4차 SLM 상담으로 확장하는 구조이다.
+본 문서는 WildGuard AI 서비스의 주요 기능을 정의한다.
+
+WildGuard AI는 AI Hub 야생동물 라벨링 JSON 데이터를 기반으로 야생동물 관측 상황의 위험 점수를 예측하고, 이후 이미지 탐지와 대응 상담으로 확장하는 AI 서비스이다.
+
+현재 1차 ML 프로젝트는 기존의 단순 위험 등급 분류 방식이 아니라, AI Hub JSON 메타데이터를 정형 데이터로 변환한 뒤 `risk_score`를 예측하는 회귀 모델 방식으로 구현한다.
 
 ---
 
 ## 2. 전체 기능 목록
 
-| 기능 ID | 기능명 | 설명 | 단계 |
-|---|---|---|---|
-| F-001 | 프로젝트 기본 화면 | WildGuard AI 소개 및 주요 기능 이동 | 공통 |
-| F-002 | AI Hub JSON 메타데이터 변환 | 라벨링 JSON을 1차 ML용 CSV로 변환 | 1차 |
-| F-003 | 위험도 라벨 생성 | 객체 수, bbox 크기, 시간대를 기준으로 risk_level 생성 | 1차 |
-| F-004 | 위험도 예측 모델 학습 | 변환 CSV로 위험도 분류 모델 학습 | 1차 |
-| F-005 | 위험도 예측 API | 사용자 입력값 기반 위험도 예측 결과 반환 | 1차 |
-| F-006 | 위험도 예측 화면 | 웹에서 위험도 입력 및 결과 확인 | 1차 |
-| F-007 | YOLO 라벨 변환 | JSON bbox를 YOLO txt 형식으로 변환 | 2차 |
-| F-008 | 이미지 탐지 API | 이미지 업로드 후 사족보행 야생동물 탐지 | 2차 |
-| F-009 | 탐지 결과 이미지 저장 | bbox가 표시된 결과 이미지를 저장 | 2차 |
-| F-010 | LLM 상담 | 예측/탐지 결과 기반 대응 상담 제공 | 3차 |
-| F-011 | SLM 경량 상담 | 현장용 경량 상담 응답 제공 | 4차 |
-| F-012 | Oracle DB 결과 저장 | 예측, 탐지, 상담 결과 저장 | 공통 |
-| F-013 | 결과 조회 | 저장된 분석 결과 조회 | 공통 |
+| 기능 ID | 기능명            | 설명                          | 단계        | 상태    |
+| ----- | -------------- | --------------------------- | --------- | ----- |
+| F-001 | 메인 화면          | WildGuard AI 소개 및 기능 이동     | 공통        | 완료    |
+| F-002 | AI Hub JSON 변환 | 라벨링 JSON을 ML용 CSV로 변환       | 1차 ML     | 완료    |
+| F-003 | 위험 점수 생성       | 도메인 가중치 기반 `risk_score` 생성  | 1차 ML     | 완료    |
+| F-004 | 위험 점수 회귀 모델 학습 | `risk_score`를 예측하는 회귀 모델 학습 | 1차 ML     | 완료    |
+| F-005 | 위험 점수 예측 API   | 입력 조건 기반 위험 점수 예측           | 1차 ML     | 완료    |
+| F-006 | 위험도 예측 화면      | 웹 화면에서 위험 점수 예측 결과 표시       | 1차 ML     | 수정 예정 |
+| F-007 | 예측 기록 저장       | 로그인 사용자 예측 결과 DB 저장         | 공통        | 일부 구현 |
+| F-008 | 예측 기록 조회       | 사용자별 위험도 예측 기록 조회           | 공통        | 일부 구현 |
+| F-009 | YOLO 라벨 변환     | JSON bbox를 YOLO 학습 포맷으로 변환  | 2차 Vision | 예정    |
+| F-010 | 이미지 탐지 API     | 이미지 업로드 후 야생동물 탐지           | 2차 Vision | 예정    |
+| F-011 | 탐지 결과 이미지 저장   | bbox가 표시된 결과 이미지 저장         | 2차 Vision | 예정    |
+| F-012 | LLM 대응 상담      | 예측/탐지 결과 기반 대응 상담           | 3차 LLM    | 예정    |
+| F-013 | SLM 경량 상담      | 현장용 경량 상담 모델 제공             | 4차 SLM    | 예정    |
 
 ---
 
-## 3. F-001 프로젝트 기본 화면
+## 3. F-001 메인 화면
 
 ### 기능 설명
-서비스 소개와 1차 위험도 예측, 2차 이미지 탐지, 3차 상담 기능으로 이동할 수 있는 메인 화면을 제공한다.
 
-### URL
-```http
-GET /
-```
+WildGuard AI 서비스의 메인 페이지를 제공한다.
 
-### 출력
-서비스명, 프로젝트 설명, 1차 위험도 예측 페이지 링크, 2차 이미지 탐지 페이지 링크, 3차 상담 페이지 링크
+### 주요 내용
 
-### 필요 이유
-사용자가 WildGuard AI의 전체 기능 흐름을 이해하고 각 기능으로 이동할 수 있어야 하기 때문이다.
+* 서비스 소개
+* 1차 위험 점수 예측 기능 이동
+* 2차 이미지 탐지 기능 이동
+* 향후 LLM/SLM 상담 기능 안내
+
+### 관련 파일
+
+| 구분  | 파일                      |
+| --- | ----------------------- |
+| 라우트 | `routes/main_routes.py` |
+| 템플릿 | `templates/index.html`  |
 
 ---
 
-## 4. F-002 AI Hub JSON 메타데이터 변환
+## 4. F-002 AI Hub JSON 변환
 
 ### 기능 설명
-AI Hub 라벨링 JSON 파일을 읽어 머신러닝 학습 가능한 CSV 데이터셋으로 변환한다.
+
+AI Hub 야생동물 라벨링 JSON을 읽어 머신러닝 학습 가능한 CSV 파일로 변환한다.
+
+1차 ML에서는 이미지 자체를 학습하지 않고, JSON 내부의 이미지 메타데이터와 annotation 정보를 정형 컬럼으로 변환한다.
 
 ### 입력 경로
+
 ```text
-data/aihub_json/TL-quadruped
+data/aihub/aihub_json/TL-quadruped/
 ```
 
 ### 출력 경로
+
 ```text
 data/aihub/ml_dataset/aihub_wildlife_metadata.csv
 ```
 
 ### 실행 명령어
-```powershell
-python scripts/convert_aihub_metadata.py
+
+```cmd
+python scripts\convert_aihub_json_to_csv.py
 ```
 
 ### 처리 내용
-JSON 파일 재귀 탐색, 이미지 메타데이터 추출, annotation 정보 추출, 객체 수 계산, bbox 면적 비율 계산, 시간대와 계절 생성, risk_level 생성, CSV 저장
+
+| 처리 항목      | 설명                              |
+| ---------- | ------------------------------- |
+| JSON 탐색    | `TL-quadruped` 하위 JSON 파일 재귀 탐색 |
+| 이미지 정보 추출  | 파일명, 주야간 여부, 카메라 타입 추출          |
+| 환경 정보 추출   | 날씨, 위치, 시간대, 계절 추출              |
+| 객체 정보 추출   | 동물 종, 객체 수 추출                   |
+| bbox 정보 계산 | 최대 bbox 면적 비율, 평균 bbox 면적 비율 계산 |
+| 위험 점수 생성   | `risk_score` 생성                 |
+| 위험 등급 생성   | `risk_grade`, `risk_level` 생성   |
+| CSV 저장     | ML 학습용 CSV 저장                   |
 
 ### 출력 컬럼
-`json_file`, `image_id`, `file_name`, `width`, `height`, `date_created`, `hour`, `time_zone`, `season`, `day`, `camera_type`, `location`, `gps`, `weather`, `object_count`, `species`, `category_name`, `hazardous`, `nocturnality`, `max_bbox_area_ratio`, `avg_bbox_area_ratio`, `risk_level`
 
-### 현재 처리 결과
+| 컬럼                    | 설명                   |
+| --------------------- | -------------------- |
+| `json_file`           | 원본 JSON 파일 경로 또는 파일명 |
+| `file_name`           | 이미지 파일명              |
+| `day`                 | 주간 / 야간 촬영 여부        |
+| `camera_type`         | RGB / IR 카메라 유형      |
+| `weather`             | 촬영 당시 날씨             |
+| `location`            | 촬영 위치                |
+| `time_zone`           | 시간대                  |
+| `season`              | 계절                   |
+| `species`             | 관측된 야생동물 종           |
+| `object_count`        | annotation 객체 수      |
+| `max_bbox_area_ratio` | 가장 큰 bbox 면적 비율      |
+| `avg_bbox_area_ratio` | 평균 bbox 면적 비율        |
+| `risk_score`          | 위험 점수                |
+| `risk_grade`          | 점수 기반 위험 등급          |
+| `risk_level`          | 기존 코드 호환용 위험 등급      |
+
+### 현재 변환 결과
+
+| 항목        |      값 |
+| --------- | -----: |
+| JSON 파일 수 | 30,700 |
+| CSV 행 수   | 30,700 |
+| CSV 컬럼 수  |     15 |
+
+---
+
+## 5. F-003 위험 점수 생성
+
+### 기능 설명
+
+AI Hub 원본 JSON에는 실제 사고 피해 점수나 위험 점수가 포함되어 있지 않다.
+
+따라서 본 프로젝트에서는 야생동물 관측 상황을 수치화하기 위해 도메인 가중치 기반의 `risk_score`를 생성한다.
+
+### 점수 생성 요소
+
+| 요소          | 반영 이유                           |
+| ----------- | ------------------------------- |
+| 동물 종        | 종에 따라 사람, 농작물, 시설물에 미치는 위험도가 다름 |
+| 시간대         | 야간과 새벽은 시야 확보와 현장 대응이 어려움       |
+| 날씨          | 비, 눈 등은 현장 대응 난도를 높일 수 있음       |
+| 객체 수        | 여러 개체가 동시에 관측되면 위험도가 높아질 수 있음   |
+| bbox 면적 비율  | 화면에서 크게 잡힌 객체는 카메라와 가까울 가능성이 있음 |
+| IR 야간 촬영 여부 | 야간 출현 상황일 가능성이 높음               |
+
+### 위험 점수 범위
+
 ```text
-데이터 크기: 30,700행 x 22컬럼
-medium: 18,694
-high: 10,196
-low: 1,810
+risk_score = 0 ~ 100
 ```
 
-### 필요 이유
-원본 JSON은 ML 모델이 직접 학습하기 어렵다. 따라서 이미지 메타데이터와 annotation 정보를 정형 컬럼으로 변환해야 1차 머신러닝 프로젝트로 사용할 수 있다.
+### 위험 등급 변환 기준
+
+| risk_score   | risk_grade |
+| ------------ | ---------- |
+| 0 이상 45 미만   | low        |
+| 45 이상 70 미만  | medium     |
+| 70 이상 100 이하 | high       |
+
+### 현재 위험 등급 분포
+
+| risk_grade |  count |
+| ---------- | -----: |
+| medium     | 19,685 |
+| high       | 10,343 |
+| low        |    672 |
+
+### 현재 위험 점수 통계
+
+| 항목   |     값 |
+| ---- | ----: |
+| mean | 62.59 |
+| std  |  8.29 |
+| min  | 26.33 |
+| max  | 88.00 |
 
 ---
 
-## 5. F-003 위험도 라벨 생성
+## 6. F-004 위험 점수 회귀 모델 학습
 
 ### 기능 설명
-원본 데이터에 없는 위험도 라벨을 프로젝트 목적에 맞게 생성한다.
 
-### 기준 컬럼
-`object_count`, `max_bbox_area_ratio`, `time_zone`, `day`
+변환된 CSV를 사용하여 `risk_score`를 예측하는 회귀 모델을 학습한다.
 
-### 점수 규칙
-| 조건 | 점수 |
-|---|---:|
-| object_count >= 3 | +2 |
-| object_count == 2 | +1 |
-| max_bbox_area_ratio >= 0.05 | +2 |
-| max_bbox_area_ratio >= 0.02 | +1 |
-| time_zone이 night 또는 dawn | +1 |
-| day가 night | +1 |
+### 모델 유형
 
-### 분류 규칙
-| 점수 | risk_level |
-|---|---|
-| 0~1 | low |
-| 2~3 | medium |
-| 4 이상 | high |
+```text
+지도학습 기반 회귀 모델
+```
 
-### 필요 이유
-AI Hub 라벨링 데이터에는 `hazardous`와 `nocturnality`는 있지만 서비스용 위험도 라벨은 없다. 객체 수와 bbox 크기, 야간 여부를 이용해 상황 위험도를 생성해야 ML 분류 모델 학습이 가능하다.
+### 사용 모델
 
----
-
-## 6. F-004 위험도 예측 모델 학습
-
-### 기능 설명
-변환된 CSV 데이터셋을 사용하여 위험도 분류 모델을 학습한다.
+```text
+RandomForestRegressor
+```
 
 ### 입력 데이터
+
 ```text
 data/aihub/ml_dataset/aihub_wildlife_metadata.csv
 ```
 
-### 추천 Feature
-| 구분 | 컬럼 |
-|---|---|
-| 범주형 | day, camera_type, weather, location, time_zone, season |
-| 수치형 | object_count, max_bbox_area_ratio, avg_bbox_area_ratio |
+### 학습 스크립트
 
-### Target
-`risk_level`
-
-### 제외 권장 컬럼
-`hazardous`, `nocturnality`, `species`, `file_name`, `json_file`
-
-### 저장 모델
 ```text
-models/ml/risk_model.pkl
+scripts/train_risk_model.py
 ```
 
-### 필요 이유
-규칙 기반 라벨 생성만으로 끝내면 머신러닝 프로젝트로 보이기 어렵다. 변환된 정형 데이터를 기반으로 실제 분류 모델을 학습해야 1차 ML 프로젝트가 완성된다.
+### 실행 명령어
+
+```cmd
+python scripts\train_risk_model.py
+```
+
+### 입력 Feature
+
+| 구분  | 컬럼                                                                            |
+| --- | ----------------------------------------------------------------------------- |
+| 범주형 | `day`, `camera_type`, `weather`, `location`, `time_zone`, `season`, `species` |
+| 수치형 | `object_count`, `max_bbox_area_ratio`, `avg_bbox_area_ratio`                  |
+
+### Target
+
+```text
+risk_score
+```
+
+### 저장 모델
+
+```text
+models/ml/risk_regression_model.pkl
+```
+
+### 모델 성능
+
+| 지표       |      값 |
+| -------- | -----: |
+| MAE      | 0.0183 |
+| RMSE     | 0.2324 |
+| R2 Score | 0.9992 |
+
+### 성능 해석
+
+현재 `risk_score`는 실제 사고 피해 데이터가 아니라, AI Hub 메타데이터 기반 도메인 가중치로 설계한 점수이다.
+
+따라서 위 성능은 실제 사고 위험을 거의 완벽하게 예측했다는 의미가 아니라, 설계된 위험 점수 체계를 회귀 모델이 거의 정확하게 학습했다는 의미이다.
+
+향후 실제 신고 데이터, 피해 기록, 기상 데이터, 지역 환경 데이터가 확보되면 현재의 `risk_score` 라벨을 실제 데이터 기반 라벨로 교체할 수 있다.
 
 ---
 
-## 7. F-005 위험도 예측 API
+## 7. F-005 위험 점수 예측 API
 
-### URL
-```http
+### 기능 설명
+
+사용자가 야생동물 관측 조건을 JSON으로 입력하면, 회귀 모델이 위험 점수 `predicted_score`를 예측하고 위험 등급과 대응 메시지를 반환한다.
+
+### Endpoint
+
+```text
 POST /api/risk/predict
 ```
 
+### 관련 파일
+
+| 구분  | 파일                                    |
+| --- | ------------------------------------- |
+| 라우트 | `routes/risk_routes.py`               |
+| 서비스 | `services/risk_prediction_service.py` |
+| 모델  | `models/ml/risk_regression_model.pkl` |
+
+### Request 필수 입력값
+
+| 필드                    | 설명              |
+| --------------------- | --------------- |
+| `day`                 | 주간 / 야간 촬영 여부   |
+| `camera_type`         | RGB / IR 카메라 유형 |
+| `weather`             | 날씨              |
+| `location`            | 위치              |
+| `time_zone`           | 시간대             |
+| `season`              | 계절              |
+| `species`             | 동물 종            |
+| `object_count`        | 객체 수            |
+| `max_bbox_area_ratio` | 최대 bbox 면적 비율   |
+| `avg_bbox_area_ratio` | 평균 bbox 면적 비율   |
+
 ### Request 예시
+
 ```json
 {
   "day": "night",
   "camera_type": "IR",
   "weather": "cloudy",
-  "location": "대산농원",
+  "location": "산림",
   "time_zone": "night",
   "season": "fall",
+  "species": "멧돼지",
   "object_count": 2,
-  "max_bbox_area_ratio": 0.0235,
-  "avg_bbox_area_ratio": 0.0206
+  "max_bbox_area_ratio": 0.03,
+  "avg_bbox_area_ratio": 0.02
 }
 ```
 
 ### Response 예시
+
 ```json
 {
-  "risk_level": "medium",
-  "message": "야간에 사족보행 야생동물이 탐지되어 주의가 필요합니다."
+  "success": true,
+  "result": {
+    "predicted_score": 68.77,
+    "risk_score": 68.77,
+    "risk_grade": "medium",
+    "risk_level": "medium",
+    "model_type": "regression",
+    "message": "중간 수준의 위험입니다. 출현 조건을 확인하고 반복 관측 여부를 모니터링하세요.",
+    "metrics": {
+      "mae": 0.0183,
+      "rmse": 0.2324,
+      "r2": 0.9992
+    },
+    "input": {
+      "day": "night",
+      "camera_type": "IR",
+      "weather": "cloudy",
+      "location": "산림",
+      "time_zone": "night",
+      "season": "fall",
+      "species": "멧돼지",
+      "object_count": 2,
+      "max_bbox_area_ratio": 0.03,
+      "avg_bbox_area_ratio": 0.02
+    }
+  },
+  "saved": false,
+  "saved_to_db": false
 }
 ```
 
-### 필요 이유
-Flask 웹 서비스와 ML 모델을 연결하기 위해 API 형태의 예측 기능이 필요하다.
+### High 위험도 테스트 예시
+
+```json
+{
+  "day": "night",
+  "camera_type": "IR",
+  "weather": "rain",
+  "location": "산림",
+  "time_zone": "night",
+  "season": "fall",
+  "species": "멧돼지",
+  "object_count": 4,
+  "max_bbox_area_ratio": 0.08,
+  "avg_bbox_area_ratio": 0.05
+}
+```
+
+예상 결과:
+
+```json
+{
+  "predicted_score": 84.37,
+  "risk_grade": "high",
+  "model_type": "regression"
+}
+```
 
 ---
 
 ## 8. F-006 위험도 예측 화면
 
+### 기능 설명
+
+사용자가 웹 화면에서 야생동물 관측 조건을 입력하고 위험 점수 예측 결과를 확인할 수 있도록 한다.
+
 ### URL
-```http
-GET /risk/
-POST /risk/
+
+```text
+GET /risk
 ```
 
 ### 입력 항목
-주야간 여부, 카메라 타입, 날씨, 위치, 시간대, 계절, 객체 수, bbox 면적 비율
+
+| 항목            | 설명                    |
+| ------------- | --------------------- |
+| 주야간 여부        | `day`                 |
+| 카메라 타입        | `camera_type`         |
+| 날씨            | `weather`             |
+| 위치            | `location`            |
+| 시간대           | `time_zone`           |
+| 계절            | `season`              |
+| 동물 종          | `species`             |
+| 객체 수          | `object_count`        |
+| 최대 bbox 면적 비율 | `max_bbox_area_ratio` |
+| 평균 bbox 면적 비율 | `avg_bbox_area_ratio` |
 
 ### 출력 항목
-위험도, 위험도 설명, 대응 메시지
 
-### 필요 이유
-비전문가가 API를 직접 호출하지 않고 웹 화면에서 결과를 확인할 수 있어야 한다.
+| 항목       | 설명                  |
+| -------- | ------------------- |
+| 예측 위험 점수 | `predicted_score`   |
+| 위험 등급    | `risk_grade`        |
+| 대응 메시지   | 위험 등급별 안내           |
+| 모델 유형    | `regression`        |
+| 모델 성능    | MAE, RMSE, R2 Score |
+
+### 현재 상태
+
+API는 회귀 모델과 연결되어 정상 동작한다.
+웹 화면은 기존 위험 등급 중심 UI에서 위험 점수 중심 UI로 수정이 필요하다.
 
 ---
 
-## 9. F-007 YOLO 라벨 변환
+## 9. F-007 예측 기록 저장
 
 ### 기능 설명
-AI Hub JSON의 bbox 좌표를 YOLO 학습용 txt 라벨로 변환한다.
 
-### 출력 형식
-```text
-class_id x_center y_center width height
-```
+로그인 사용자의 위험 점수 예측 결과를 DB에 저장한다.
 
-### 클래스 정책
-초기 모델은 사족보행 야생동물을 하나의 클래스로 통합한다.
+### 현재 상태
 
-```text
-class 0 = quadruped
-```
+현재 API 응답에는 저장 여부를 나타내는 필드가 포함되어 있다.
 
-### 필요 이유
-멧돼지 데이터가 대부분이고 고라니, 반달가슴곰, 멧토끼 데이터는 적다. 클래스별 불균형을 줄이고, 현장에서 위험 가능 사족보행 객체가 있는지 먼저 탐지하기 위해 단일 클래스가 적합하다.
-
----
-
-## 10. F-008 이미지 탐지 API
-
-### URL
-```http
-POST /api/vision/detect
-```
-
-### Request
-```text
-multipart/form-data
-image: 업로드 이미지
-```
-
-### Response 예시
 ```json
 {
-  "detected": true,
-  "count": 1,
-  "detections": [
-    {
-      "class_id": 0,
-      "class_name": "quadruped",
-      "confidence": 0.87,
-      "bbox": [120, 80, 420, 360],
-      "risk_level": "danger"
-    }
-  ],
-  "result_image_url": "/static/outputs/result_001.jpg"
+  "saved": false,
+  "saved_to_db": false
 }
 ```
 
-### 필요 이유
-2차 프로젝트의 핵심은 이미지 기반 객체 탐지이다. REST API로 구현하면 Flask 서비스와 프론트엔드에서 쉽게 사용할 수 있다.
+비회원 예측은 저장하지 않고, 로그인 사용자의 예측 결과만 저장하는 구조로 확장한다.
+
+### 저장 대상
+
+| 항목     | 설명                |
+| ------ | ----------------- |
+| 사용자 ID | 로그인 사용자 식별자       |
+| 입력 데이터 | 예측 요청 JSON        |
+| 예측 점수  | `predicted_score` |
+| 위험 등급  | `risk_grade`      |
+| 메시지    | 대응 안내             |
+| 생성 시각  | 예측 실행 시간          |
 
 ---
 
-## 11. F-009 탐지 결과 이미지 저장
-
-### 저장 경로
-```text
-static/outputs/
-```
-
-### 필요 이유
-사용자가 탐지 결과를 시각적으로 확인할 수 있어야 하며, 추후 결과 조회와 상담 기능에서도 활용할 수 있다.
-
----
-
-## 12. F-010 LLM 상담
-
-### URL
-```http
-POST /api/chat
-```
-
-### Request 예시
-```json
-{
-  "risk_level": "high",
-  "detected": true,
-  "animal_group": "quadruped",
-  "object_count": 2,
-  "time_zone": "night",
-  "message": "농장 근처에서 멧돼지 같은 동물이 보였습니다."
-}
-```
-
-### Response 예시
-```json
-{
-  "answer": "야간에 사족보행 야생동물이 여러 마리 탐지된 상황이므로 직접 접근하지 말고 안전한 실내로 이동한 뒤 위치와 시간을 기록하세요."
-}
-```
-
-### 필요 이유
-예측과 탐지 결과만 제공하면 사용자가 다음 행동을 판단하기 어렵다. LLM 상담은 결과를 사람이 이해할 수 있는 대응 지침으로 바꿔준다.
-
----
-
-## 13. F-011 SLM 경량 상담
+## 10. F-008 예측 기록 조회
 
 ### 기능 설명
-저사양 또는 현장 환경에서 짧고 빠른 대응 상담을 제공한다.
+
+사용자가 본인의 위험 점수 예측 기록을 조회한다.
+
+### 사용자별 권한
+
+| 사용자     | 조회 범위           |
+| ------- | --------------- |
+| 비회원     | 조회 불가           |
+| 일반 사용자  | 본인 기록           |
+| 농장주     | 본인 기록           |
+| 산림관리원   | 본인 기록           |
+| 지자체 담당자 | 전체 기록 조회로 확장 가능 |
+| 관리자     | 전체 기록 조회 가능     |
+
+---
+
+## 11. F-009 YOLO 라벨 변환
+
+### 기능 설명
+
+AI Hub JSON의 bbox annotation을 YOLO 학습용 txt 라벨로 변환한다.
 
 ### 입력
-동물 그룹, 위험도, 시간대, 객체 수, 위치 상황
+
+```text
+AI Hub 원본 이미지
+AI Hub 라벨링 JSON
+```
 
 ### 출력
-핵심 대응 요약, 접근 금지 여부, 신고 필요 여부
 
-### 필요 이유
-4차 프로젝트는 3차 LLM과 차별화되어야 한다. SLM은 작은 모델로 빠른 현장 대응을 제공하는 방향이 적합하다.
+```text
+YOLO images/train
+YOLO images/val
+YOLO labels/train
+YOLO labels/val
+data.yaml
+```
 
----
+### 예정 기능
 
-## 14. F-012 Oracle DB 결과 저장
-
-### 주요 테이블
-| 테이블 | 설명 |
-|---|---|
-| USERS | 사용자 정보 |
-| RISK_PREDICTION_RESULT | 1차 위험도 예측 결과 |
-| VISION_DETECTION_RESULT | 2차 이미지 탐지 결과 |
-| CHAT_LOG | 3차/4차 상담 로그 |
-
-### 필요 이유
-기존 Oracle XE와 python-oracledb 경험을 활용할 수 있고, Flask + Oracle DB 연동은 웹 서비스 프로젝트의 완성도를 높인다.
+* bbox 좌표 정규화
+* train/val 분리
+* YOLO 클래스 정의
+* data.yaml 생성
 
 ---
 
-## 15. F-013 결과 조회
+## 12. F-010 이미지 탐지 API
 
 ### 기능 설명
-로그인 사용자가 이전 예측, 탐지, 상담 결과를 조회할 수 있다.
+
+사용자가 이미지를 업로드하면 YOLO 모델이 야생동물을 탐지하고 결과를 반환한다.
+
+### 예정 Endpoint
+
+```text
+POST /api/vision/predict
+```
 
 ### 출력 항목
-분석 날짜, 분석 유형, 위험도, 객체 수, 탐지 여부, 상담 요약
 
-### 필요 이유
-야생동물 출현은 반복 기록 관리가 중요하므로, 결과 저장과 조회는 서비스 완성도를 높인다.
-
-
----
-
-## 23. 인증 및 회원 기반 예측 저장 기능 추가 명세
-
-### F-020 회원가입
-
-#### URL
-```http
-GET /auth/register
-POST /auth/register
-```
-
-#### 입력 항목
-| 항목 | 설명 |
-|---|---|
-| username | 로그인 아이디 |
-| password | 비밀번호 |
-| password_confirm | 비밀번호 확인 |
-| name | 사용자 이름 |
-| organization | 소속 기관/단체 |
-| role | 사용자 유형 |
-
-#### 처리 절차
-1. 필수 입력값을 검증한다.
-2. 비밀번호와 비밀번호 확인 값이 같은지 확인한다.
-3. 비밀번호를 해시 처리한다.
-4. `USERS` 테이블에 사용자 정보를 저장한다.
-5. 회원가입 성공 후 로그인 페이지로 이동한다.
+| 항목               | 설명             |
+| ---------------- | -------------- |
+| class_name       | 탐지 클래스         |
+| confidence       | 탐지 신뢰도         |
+| bbox             | 탐지 좌표          |
+| result_image_url | bbox 표시 결과 이미지 |
+| risk_hint        | 탐지 기반 위험 안내    |
 
 ---
 
-### F-021 로그인
+## 13. F-011 LLM 대응 상담
 
-#### URL
-```http
-GET /auth/login
-POST /auth/login
-```
+### 기능 설명
 
-#### 입력 항목
-| 항목 | 설명 |
-|---|---|
-| username | 로그인 아이디 |
-| password | 비밀번호 |
+위험 점수 예측 결과와 이미지 탐지 결과를 바탕으로 사용자 상황에 맞는 야생동물 대응 상담을 제공한다.
 
-#### 처리 절차
-1. `username`으로 사용자를 조회한다.
-2. 입력 비밀번호와 저장된 `password_hash`를 검증한다.
-3. 성공 시 Flask session에 사용자 정보를 저장한다.
-4. 위험도 예측 화면으로 이동한다.
+### 상담 예시
 
-#### 세션 저장 값
 ```text
-user_id
-username
-name
-role
+야간 산림 인근에서 멧돼지가 크게 관측되어 위험 점수가 높게 예측되었습니다.
+현장 접근을 피하고, 주변 시설물과 이동 경로를 확인하세요.
+반복 출현이 확인되면 관계 기관에 신고하거나 차단 장치를 점검하세요.
 ```
 
 ---
 
-### F-022 로그아웃
+## 14. F-012 SLM 경량 상담
 
-#### URL
-```http
-GET /auth/logout
-```
+### 기능 설명
 
-#### 처리 절차
-1. session을 초기화한다.
-2. 메인 화면 또는 위험도 예측 화면으로 이동한다.
+현장 환경에서 빠르게 사용할 수 있는 경량 상담 모델을 제공한다.
+
+### 목표
+
+* 낮은 사양 환경에서 실행 가능
+* 짧은 대응 안내 생성
+* 인터넷 연결이 불안정한 환경에서도 기본 상담 가능
 
 ---
 
-### F-023 비회원 예측 체험
+## 15. GitHub 업로드 제외 대상
 
-#### 기능 설명
-로그인하지 않은 사용자가 위험도 예측을 체험할 수 있다.
+다음 파일은 GitHub에 업로드하지 않는다.
 
-#### 정책
-| 항목 | 정책 |
-|---|---|
-| `/risk` 접근 | 허용 |
-| 예측 실행 | 허용 |
-| 결과 출력 | 허용 |
-| Oracle DB 저장 | 저장 안 함 |
-| 기록 조회 | 로그인 필요 |
-
-#### 화면 안내
 ```text
-비회원 체험 모드입니다. 예측은 가능하지만 기록은 저장되지 않습니다. 로그인하면 예측 기록을 저장할 수 있습니다.
+data/
+models/ml/
+*.pkl
+*.joblib
+```
+
+### 제외 이유
+
+* AI Hub 원본 데이터는 용량과 라이선스 문제가 있음
+* 변환 CSV는 스크립트로 재생성 가능함
+* 학습 모델은 약 98MB로 GitHub 저장소를 무겁게 만듦
+* 모델은 아래 명령어로 로컬에서 재생성 가능함
+
+```cmd
+python scripts\convert_aihub_json_to_csv.py
+python scripts\train_risk_model.py
 ```
 
 ---
 
-### F-024 로그인 사용자 예측 저장
+## 16. 현재 완료 상태
 
-#### 기능 설명
-로그인 사용자가 위험도 예측을 실행하면 예측 결과를 Oracle DB에 저장한다.
-
-#### 저장 조건
-```python
-if "user_id" in session:
-    save_risk_prediction_log(...)
-else:
-    saved_to_db = False
-```
-
-#### 저장 테이블
-```text
-risk_prediction_log
-```
-
-#### 저장 컬럼
-| 컬럼 | 설명 |
-|---|---|
-| user_id | 로그인 사용자 ID |
-| day | 주야간 |
-| camera_type | 카메라 유형 |
-| weather | 날씨 |
-| location | 위치 |
-| time_zone | 시간대 |
-| season | 계절 |
-| object_count | 객체 수 |
-| max_bbox_area_ratio | 최대 bbox 면적 비율 |
-| avg_bbox_area_ratio | 평균 bbox 면적 비율 |
-| risk_level | 예측 위험도 |
-| risk_message | 대응 메시지 |
-| created_at | 생성일 |
-
----
-
-### F-025 예측 기록 조회
-
-#### URL
-```http
-GET /risk/history
-```
-
-#### 기능 설명
-로그인 사용자가 본인의 예측 기록을 조회한다.
-
-#### 접근 정책
-| 사용자 상태 | 처리 |
-|---|---|
-| 비로그인 | 로그인 페이지로 이동 |
-| 로그인 | 본인 예측 기록 조회 |
-| admin/official | 전체 기록 조회 기능으로 확장 가능 |
-
-#### 출력 항목
-날짜, 위치, 날씨, 시간대, 계절, 객체 수, bbox 비율, 위험도, 대응 메시지
-
----
-
-### F-026 관리자 전체 예측 기록 조회
-
-#### URL
-```http
-GET /admin/risk/logs
-```
-
-#### 기능 설명
-관리자 또는 지자체 담당자가 전체 예측 기록을 조회한다.
-
-#### 접근 권한
-```text
-admin
-official
-```
-
-#### 현재 상태
-MVP 이후 확장 기능으로 설계한다.
-
----
-
-## 24. 추가 DB 구조
-
-### USERS
-| 컬럼 | 타입 | 설명 |
-|---|---|---|
-| user_id | NUMBER | 사용자 ID |
-| username | VARCHAR2(50) | 로그인 아이디 |
-| password_hash | VARCHAR2(255) | 해시 처리된 비밀번호 |
-| name | VARCHAR2(50) | 사용자 이름 |
-| organization | VARCHAR2(100) | 소속 |
-| role | VARCHAR2(30) | 사용자 유형 |
-| created_at | DATE | 가입일 |
-
-### RISK_PREDICTION_LOG 변경
-| 컬럼 | 타입 | 설명 |
-|---|---|---|
-| user_id | NUMBER | 예측을 실행한 사용자 ID |
-
-### 사용자 유형
-| role | 설명 |
-|---|---|
-| citizen | 일반 사용자 |
-| farmer | 농장주 |
-| ranger | 산림관리원 |
-| official | 지자체 담당자 |
-| admin | 관리자 |
+| 작업                             | 상태    |
+| ------------------------------ | ----- |
+| AI Hub JSON 30,700개 변환         | 완료    |
+| `risk_score` 생성                | 완료    |
+| `risk_grade` 생성                | 완료    |
+| 회귀 모델 학습                       | 완료    |
+| `risk_regression_model.pkl` 생성 | 완료    |
+| `/api/risk/predict` 회귀 모델 연결   | 완료    |
+| medium 테스트                     | 완료    |
+| high 테스트                       | 완료    |
+| 웹 화면 점수 표시                     | 수정 예정 |
+| DB 저장 연동                       | 수정 예정 |
+| YOLO 탐지 기능                     | 예정    |
+| LLM 상담 기능                      | 예정    |
+| SLM 경량화                        | 예정    |
