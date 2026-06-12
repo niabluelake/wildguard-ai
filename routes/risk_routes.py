@@ -18,16 +18,10 @@ def predict():
             }), 400
 
         required_fields = [
-            "day",
-            "camera_type",
-            "weather",
             "location",
+            "weather",
             "time_zone",
             "season",
-            "species",
-            "object_count",
-            "max_bbox_area_ratio",
-            "avg_bbox_area_ratio",
         ]
 
         missing_fields = [
@@ -52,17 +46,17 @@ def predict():
             "saved_to_db": saved_to_db,
         })
 
-    except ValueError as error:
-        return jsonify({
-            "success": False,
-            "message": str(error),
-        }), 400
-
     except FileNotFoundError as error:
         return jsonify({
             "success": False,
             "message": str(error),
         }), 500
+
+    except ValueError as error:
+        return jsonify({
+            "success": False,
+            "message": str(error),
+        }), 400
 
     except Exception as error:
         return jsonify({
