@@ -5,6 +5,8 @@ from routes.risk_history_routes import risk_history_bp
 from routes.risk_routes import risk_bp
 from routes.risk_page_routes import risk_page_bp
 from routes.vision_routes import vision_bp
+from routes.chat_routes import chat_bp
+
 
 def create_app():
     app = Flask(__name__)
@@ -18,6 +20,7 @@ def create_app():
     app.register_blueprint(risk_page_bp)
     app.register_blueprint(risk_history_bp)
     app.register_blueprint(vision_bp)
+    app.register_blueprint(chat_bp)
 
     return app
 
