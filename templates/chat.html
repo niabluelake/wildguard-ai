@@ -154,6 +154,16 @@
                             AI Hub 관측 데이터에 포함된 지역 기준입니다.
                         </div>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">상담 모드</label>
+                        <select class="form-select" id="consultation_mode">
+                            <option value="detail" selected>상세 상담 모드</option>
+                            <option value="field">현장 대응 모드</option>
+                        </select>
+                        <div class="help-text">
+                            상세 상담은 설명 중심, 현장 대응은 빠른 행동 요령 중심입니다.
+                        </div>
+                    </div>
 
                     <div class="mb-3">
                         <label class="form-label">날씨</label>
@@ -247,6 +257,7 @@
             weather: document.getElementById("weather").value,
             time_zone: document.getElementById("time_zone").value,
             season: document.getElementById("season").value,
+            consultation_mode: document.getElementById("consultation_mode").value,
             message: messageInput.value
         };
     }
