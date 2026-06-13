@@ -75,7 +75,7 @@
             <div class="carousel-item active">
                 <div class="bg-dark text-white d-flex align-items-center" style="height: 440px;">
                     <div class="container">
-                        <span class="badge bg-success mb-3">1차 ML · 2차 Vision · Chatbot 구현</span>
+                        <span class="badge bg-success mb-3">1차 ML · 2차 Vision · 3·4차 Chatbot</span>
                         <h1 class="display-4 fw-bold">WildGuard AI</h1>
                         <p class="lead mt-3">
                             AI Hub 야생동물 관측 데이터를 기반으로 지역별 출몰 위험도를 예측하고,
@@ -182,12 +182,13 @@
     </section>
 
     <section class="row g-4 mb-5">
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-body d-flex flex-column">
                     <h5 class="card-title fw-bold">위험도 예측</h5>
                     <p class="card-text">
-                        AI Hub 관측 지역, 날씨, 시간대, 계절 조건을 기반으로 야생동물 출몰 위험 점수를 예측합니다.
+                        AI Hub 관측 지역, 날씨, 시간대, 계절 조건을 기반으로
+                        야생동물 출몰 위험 점수를 예측합니다.
                     </p>
                     <span class="badge bg-success align-self-start">이용 가능</span>
                     <div class="mt-auto">
@@ -199,12 +200,13 @@
             </div>
         </div>
 
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-body d-flex flex-column">
                     <h5 class="card-title fw-bold">이미지/영상 탐지</h5>
                     <p class="card-text">
-                        YOLO 모델로 업로드한 이미지와 짧은 영상에서 야생동물을 탐지합니다.
+                        YOLO 모델로 업로드한 이미지와 짧은 영상에서 야생동물을 탐지하고
+                        탐지 결과를 시각적으로 확인합니다.
                     </p>
                     <span class="badge bg-success align-self-start">이용 가능</span>
                     <div class="mt-auto">
@@ -216,12 +218,13 @@
             </div>
         </div>
 
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-body d-flex flex-column">
-                    <h5 class="card-title fw-bold">대응 상담</h5>
+                    <h5 class="card-title fw-bold">대응 상담 챗봇</h5>
                     <p class="card-text">
-                        지역 기반 위험도 예측 결과를 바탕으로 야생동물 출몰 상황별 행동 요령을 안내합니다.
+                        위험도 예측 결과를 바탕으로 야생동물 대응 방법을 안내합니다.
+                        3차 LLM은 상세 상담, 4차 SLM은 현장용 빠른 안내 역할로 확장합니다.
                     </p>
                     <span class="badge bg-success align-self-start">이용 가능</span>
                     <div class="mt-auto">
@@ -229,18 +232,6 @@
                             상담 시작
                         </a>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title fw-bold">현장 대응 안내</h5>
-                    <p class="card-text">
-                        현장용 경량 상담 모델로 빠른 대응 안내를 제공할 예정입니다.
-                    </p>
-                    <span class="badge bg-warning text-dark">준비 중</span>
                 </div>
             </div>
         </div>
@@ -255,7 +246,7 @@
                         WildGuard AI 현재 구현 기준 주요 기능입니다.
                     </p>
                 </div>
-                <span class="badge bg-primary mt-3 mt-md-0">1차 ML · 2차 Vision · Chatbot</span>
+                <span class="badge bg-primary mt-3 mt-md-0">1차 ML · 2차 Vision · 3·4차 Chatbot</span>
             </div>
 
             <hr>
@@ -283,17 +274,17 @@
 
                 <div class="col-md-4">
                     <div class="border rounded p-3 h-100 bg-light">
-                        <h6 class="fw-bold">회원 예측 기록</h6>
+                        <h6 class="fw-bold">대응 상담 챗봇</h6>
                         <p class="text-muted mb-2">
-                            로그인 사용자 예측 결과를 Oracle DB에 저장하고 조회하는 구조
+                            위험도 예측 결과를 바탕으로 사용자 질문에 대응 요령을 안내하는 상담 기능
                         </p>
-                        <span class="badge bg-primary">구현 중</span>
+                        <span class="badge bg-success">완료</span>
                     </div>
                 </div>
             </div>
 
             <div class="row g-3 mt-1">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="border rounded p-3 h-100">
                         <h6 class="fw-bold">1차 ML 입력</h6>
                         <p class="text-muted mb-0">
@@ -302,11 +293,20 @@
                     </div>
                 </div>
 
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="border rounded p-3 h-100">
                         <h6 class="fw-bold">2차 Vision 입력</h6>
                         <p class="text-muted mb-0">
                             이미지 또는 짧은 영상을 업로드하면 탐지 수, confidence, bbox, 결과 이미지를 제공합니다.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="border rounded p-3 h-100">
+                        <h6 class="fw-bold">3·4차 상담 입력</h6>
+                        <p class="text-muted mb-0">
+                            사용자의 질문과 위험도 예측 결과를 결합해 상세 상담과 현장용 빠른 안내로 확장합니다.
                         </p>
                     </div>
                 </div>
@@ -358,14 +358,14 @@
                     </li>
                     <li class="mb-2">
                         <a href="/chat" class="text-decoration-none text-light">
-                            야생동물 대응 상담
+                            야생동물 대응 상담 챗봇
                             <span class="badge bg-success ms-1">이용 가능</span>
                         </a>
                     </li>
                     <li class="mb-2">
                         <span class="text-secondary">
-                            현장용 경량 대응 안내
-                            <span class="badge bg-warning text-dark ms-1">준비 중</span>
+                            현장용 SLM 경량 안내
+                            <span class="badge bg-primary ms-1">상담 서비스 내부 확장</span>
                         </span>
                     </li>
                 </ul>
@@ -376,10 +376,11 @@
                 <ul class="list-unstyled text-secondary">
                     <li class="mb-2">1차 ML: AI Hub 관측 지역 기반 위험 점수 예측</li>
                     <li class="mb-2">2차 Vision: YOLO 기반 이미지/영상 탐지</li>
-                    <li class="mb-2">3차 Chatbot: 위험도 기반 대응 상담</li>
+                    <li class="mb-2">3차 LLM: 위험도 기반 상세 대응 상담</li>
+                    <li class="mb-2">4차 SLM: 현장용 경량 대응 안내</li>
                     <li class="mb-2">Backend: Flask</li>
                     <li class="mb-2">DB: Oracle DB 연동</li>
-                    <li class="mb-2">모델: RandomForestRegressor, YOLO</li>
+                    <li class="mb-2">모델: RandomForestRegressor, YOLO, LLM/SLM 상담 모델</li>
                 </ul>
             </div>
 
@@ -392,7 +393,7 @@
                 © 2026 WildGuard AI. Wildlife Risk Prediction & Response Support Service.
             </small>
             <small class="text-secondary">
-                위험도 예측 이용 가능 · 이미지/영상 탐지 이용 가능 · 대응 상담 이용 가능 · 현장 대응 안내 준비 중
+                위험도 예측 이용 가능 · 이미지/영상 탐지 이용 가능 · 대응 상담 이용 가능 · 현장용 SLM 안내는 상담 서비스 내부 확장 예정
             </small>
         </div>
     </div>
