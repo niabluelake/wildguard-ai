@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>WildGuard AI - 내 주변 야생동물 위험도</title>
+    <title>WildGuard AI - 야생동물 위험도 예측</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <link
@@ -11,167 +11,369 @@
     >
 
     <style>
+        :root {
+            --wg-green: #14532d;
+            --wg-green-2: #198754;
+            --wg-soft-green: #eef7f1;
+            --wg-bg: #f4f7f4;
+            --wg-ink: #1f2d24;
+            --wg-muted: #667085;
+            --wg-border: #dfe7e2;
+            --wg-yellow: #ffc107;
+            --wg-red: #dc3545;
+        }
+
         body {
-            background-color: #f4f7f4;
-            color: #1f2d24;
+            background: linear-gradient(180deg, #edf7ef 0%, #f8faf8 45%, #ffffff 100%);
+            color: var(--wg-ink);
         }
 
         .navbar {
-            background-color: #198754;
+            background: rgba(20, 83, 45, 0.96);
+            backdrop-filter: blur(10px);
         }
 
-        .page-title {
-            font-weight: 800;
-            color: #174626;
+        .hero {
+            background:
+                radial-gradient(circle at top left, rgba(25, 135, 84, 0.28), transparent 32%),
+                linear-gradient(135deg, #123d24 0%, #1f6b3a 50%, #163222 100%);
+            color: white;
+            border-radius: 28px;
+            padding: 42px;
+            box-shadow: 0 24px 60px rgba(20, 83, 45, 0.25);
         }
 
-        .page-subtitle {
-            color: #5f6f65;
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.14);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 999px;
+            padding: 8px 14px;
+            font-size: 0.88rem;
+            font-weight: 700;
         }
 
-        .card {
-            border: none;
-            border-radius: 20px;
-            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+        .hero h1 {
+            font-weight: 900;
+            letter-spacing: -0.04em;
+        }
+
+        .soft-card {
+            border: 1px solid rgba(20, 83, 45, 0.08);
+            border-radius: 24px;
+            box-shadow: 0 12px 35px rgba(16, 24, 40, 0.08);
+        }
+
+        .section-title {
+            font-weight: 900;
+            letter-spacing: -0.03em;
         }
 
         .form-label {
-            font-weight: 700;
-            color: #253b2c;
+            font-weight: 800;
+            color: #20382b;
+        }
+
+        .form-control,
+        .form-select {
+            border-radius: 14px;
+            border-color: var(--wg-border);
+            padding: 12px 14px;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--wg-green-2);
+            box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.15);
         }
 
         .help-text {
             font-size: 0.86rem;
-            color: #6c757d;
+            color: var(--wg-muted);
+            margin-top: 6px;
         }
 
-        .badge-soft {
-            background-color: #eef5ef;
-            color: #174626;
-            border-radius: 999px;
-            padding: 6px 12px;
-            font-weight: 700;
-            font-size: 0.85rem;
-        }
-
-        .notice-box {
-            background-color: #ffffff;
-            border-left: 5px solid #198754;
-            border-radius: 12px;
-            padding: 16px;
-            color: #495057;
-        }
-
-        .risk-score {
-            font-size: 56px;
+        .btn-main {
+            background: var(--wg-green-2);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            padding: 14px 18px;
             font-weight: 900;
+        }
+
+        .btn-main:hover {
+            background: #157347;
+            color: white;
+        }
+
+        .summary-card {
+            border: 1px solid var(--wg-border);
+            border-radius: 20px;
+            background: #ffffff;
+            padding: 18px;
+            height: 100%;
+        }
+
+        .summary-label {
+            color: var(--wg-muted);
+            font-size: 0.86rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .summary-value {
+            font-size: 1.55rem;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+        }
+
+        .score-circle {
+            width: 172px;
+            height: 172px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            margin: 0 auto;
+            background: conic-gradient(var(--wg-green-2) 0deg, var(--wg-green-2) 0deg, #e9f1ec 0deg);
+            position: relative;
+        }
+
+        .score-circle::before {
+            content: "";
+            width: 132px;
+            height: 132px;
+            border-radius: 50%;
+            background: white;
+            position: absolute;
+        }
+
+        .score-inner {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+
+        .score-number {
+            display: block;
+            font-size: 2.2rem;
+            font-weight: 950;
+            letter-spacing: -0.05em;
             line-height: 1;
         }
 
-        .risk-grade {
-            font-size: 30px;
-            font-weight: 800;
+        .score-caption {
+            display: block;
+            color: var(--wg-muted);
+            font-size: 0.86rem;
+            margin-top: 6px;
+        }
+
+        .grade-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 999px;
+            padding: 9px 14px;
+            font-weight: 900;
+            font-size: 0.95rem;
         }
 
         .grade-low {
-            color: #198754;
+            background: #e7f7ee;
+            color: #146c43;
         }
 
         .grade-medium {
-            color: #fd7e14;
+            background: #fff3cd;
+            color: #8a5d00;
         }
 
         .grade-high {
-            color: #dc3545;
+            background: #fde8e8;
+            color: #b02a37;
         }
 
-        .summary-box {
-            border-radius: 16px;
+        .message-box {
+            background: var(--wg-soft-green);
+            border: 1px solid rgba(25, 135, 84, 0.16);
+            border-radius: 20px;
             padding: 18px;
+            line-height: 1.65;
         }
 
-        .summary-low {
-            background-color: #e8f6ef;
-            border: 1px solid #b8e2ca;
-        }
-
-        .summary-medium {
-            background-color: #fff3cd;
-            border: 1px solid #ffdf7e;
-        }
-
-        .summary-high {
-            background-color: #f8d7da;
-            border: 1px solid #f1aeb5;
-        }
-
-        .result-empty {
-            min-height: 330px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            color: #6c757d;
-        }
-
-        .result-hidden {
-            display: none;
+        .action-list {
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 0;
         }
 
         .action-list li {
-            margin-bottom: 8px;
+            display: flex;
+            gap: 10px;
+            padding: 12px 0;
+            border-bottom: 1px solid #edf1ee;
+            line-height: 1.55;
         }
 
-        .detail-box {
-            background-color: #f8f9fa;
-            border-radius: 14px;
+        .action-list li:last-child {
+            border-bottom: none;
+        }
+
+        .check-icon {
+            width: 26px;
+            height: 26px;
+            min-width: 26px;
+            display: inline-grid;
+            place-items: center;
+            border-radius: 50%;
+            background: #dff3e7;
+            color: #146c43;
+            font-weight: 900;
+        }
+
+        .small-metric {
+            background: #f8faf8;
+            border: 1px solid #edf1ee;
+            border-radius: 16px;
             padding: 14px;
         }
 
-        .btn-success {
-            font-weight: 800;
-            border-radius: 12px;
-            padding: 12px;
+        .small-metric strong {
+            display: block;
+            font-size: 1.1rem;
+        }
+
+        .notice {
+            border-left: 5px solid var(--wg-yellow);
+            background: #fff8e1;
+            border-radius: 16px;
+            padding: 16px 18px;
+            color: #5d4300;
+        }
+
+        .empty-state {
+            min-height: 380px;
+            display: grid;
+            place-items: center;
+            text-align: center;
+            color: var(--wg-muted);
+        }
+
+        .loading-dot {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            background: currentColor;
+            border-radius: 50%;
+            animation: pulse 0.9s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.35; transform: scale(0.9); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        @media (max-width: 768px) {
+            .hero {
+                padding: 28px;
+                border-radius: 20px;
+            }
+
+            .score-circle {
+                width: 150px;
+                height: 150px;
+            }
+
+            .score-circle::before {
+                width: 116px;
+                height: 116px;
+            }
         }
     </style>
 </head>
 
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark">
+<nav class="navbar navbar-expand-lg navbar-dark sticky-top">
     <div class="container">
         <a class="navbar-brand fw-bold" href="/">WildGuard AI</a>
-        <div>
-            <a class="btn btn-outline-light btn-sm me-2" href="/chat">상담 챗봇</a>
-            <a class="btn btn-outline-light btn-sm" href="/">메인</a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#riskNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="riskNavbar">
+            <ul class="navbar-nav ms-auto align-items-lg-center">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">홈</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/risk">위험도 예측</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/vision">이미지/영상 탐지</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/chat">상담 챗봇</a>
+                </li>
+
+                {% if session.get("user_id") %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/risk/history">예측 기록</a>
+                    </li>
+                    <li class="nav-item ms-lg-3">
+                        <span class="navbar-text text-light me-2">{{ session.get("name") }}님</span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-outline-light btn-sm" href="/auth/logout">로그아웃</a>
+                    </li>
+                {% else %}
+                    <li class="nav-item ms-lg-3">
+                        <a class="nav-link" href="/auth/login">로그인</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-light btn-sm" href="/auth/register">회원가입</a>
+                    </li>
+                {% endif %}
+            </ul>
         </div>
     </div>
 </nav>
 
-<div class="container py-5">
+<main class="container py-5">
 
-    <div class="mb-4">
-        <span class="badge-soft">지역 기반 출몰 위험 예측</span>
-        <h1 class="page-title mt-3">내 주변 야생동물 위험도 확인</h1>
-        <p class="page-subtitle">
-            AI Hub 관측 데이터에 포함된 지역을 선택하면, 날씨·시간대·계절 조건에 따른 야생동물 출몰 위험도를 예측합니다.
-        </p>
-    </div>
+    <section class="hero mb-5">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-8">
+                <span class="hero-badge">지역 기반 출몰 위험 예측</span>
+                <h1 class="display-5 mt-3 mb-3">내 주변 야생동물 위험도 확인</h1>
+                <p class="lead mb-0">
+                    AI Hub 관측 데이터에 포함된 지역을 선택하면 날씨, 시간대, 계절 조건에 따른
+                    야생동물 출몰 위험 점수와 행동 요령을 예측합니다.
+                </p>
+            </div>
+            <div class="col-lg-4">
+                <div class="notice bg-white bg-opacity-10 text-white border-0">
+                    <strong>안전 안내</strong>
+                    <div class="mt-2">
+                        실제로 야생동물을 발견했다면 가까이 가지 말고 안전한 장소로 이동하세요.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-    <div class="notice-box mb-4">
-        이 서비스는 AI Hub 야생동물 관측 데이터를 바탕으로 한 참고용 예측입니다.
-        실제 위험 상황에서는 야생동물에게 접근하지 말고 안전한 장소로 이동하세요.
-    </div>
+    <div class="row g-4 align-items-start">
 
-    <div class="row g-4">
-
-        <div class="col-lg-6">
-            <div class="card">
+        <div class="col-lg-4">
+            <div class="card soft-card">
                 <div class="card-body p-4">
-                    <h4 class="fw-bold mb-2">위험도 확인 조건</h4>
-                    <p class="text-muted mb-4">
-                        확인하고 싶은 지역과 현재 주변 상황을 선택하세요.
-                    </p>
+                    <h4 class="section-title mb-2">위험도 확인 조건</h4>
+                    <p class="text-muted mb-4">지역과 현재 조건을 선택한 뒤 위험도를 확인하세요.</p>
 
                     <form id="riskForm">
                         <div class="mb-3">
@@ -180,11 +382,11 @@
                                 type="text"
                                 class="form-control"
                                 id="region_name"
-                                value="학원 근처"
-                                placeholder="예: 우리 집 근처, 학원 근처, 농장 주변"
+                                value="집 근처"
+                                placeholder="예: 집 근처, 학원 근처, 농장 주변"
                             >
                             <div class="help-text">
-                                사용자가 알아보기 위한 이름입니다. 예측에는 주변 환경 조건이 함께 사용됩니다.
+                                화면에 표시할 별칭입니다.
                             </div>
                         </div>
 
@@ -210,12 +412,12 @@
                                 <option value="한려해상국립공원">한려해상국립공원</option>
                             </select>
                             <div class="help-text">
-                                AI Hub 관측 데이터에 포함된 지역 기준으로 위험도를 예측합니다.
+                                AI Hub 관측 데이터에 포함된 지역 기준입니다.
                             </div>
                         </div>
 
                         <div class="row g-3">
-                            <div class="col-md-6">
+                            <div class="col-12">
                                 <label class="form-label">날씨</label>
                                 <select class="form-select" id="weather" required>
                                     <option value="sunny">맑음</option>
@@ -225,8 +427,8 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-6">
-                                <label class="form-label">확인할 시간대</label>
+                            <div class="col-12">
+                                <label class="form-label">시간대</label>
                                 <select class="form-select" id="time_zone" required>
                                     <option value="dawn">새벽</option>
                                     <option value="day">낮</option>
@@ -235,7 +437,7 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-12">
                                 <label class="form-label">계절</label>
                                 <select class="form-select" id="season" required>
                                     <option value="spring">봄</option>
@@ -244,183 +446,193 @@
                                     <option value="winter">겨울</option>
                                 </select>
                             </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label">확인 목적</label>
-                                <select class="form-select" id="purpose">
-                                    <option value="walk">이동 / 산책 전 확인</option>
-                                    <option value="farm">농장 / 밭 주변 확인</option>
-                                    <option value="road">도로 이동 전 확인</option>
-                                    <option value="monitoring" selected>주변 위험 모니터링</option>
-                                </select>
-                                <div class="help-text">
-                                    현재는 안내 문구 참고용이며, 예측 입력에는 직접 사용하지 않습니다.
-                                </div>
-                            </div>
                         </div>
 
-                        <button type="submit" class="btn btn-success w-100 mt-4" id="predictBtn">
+                        <button class="btn btn-main w-100 mt-4" type="submit" id="submitBtn">
                             내 주변 위험도 확인하기
                         </button>
                     </form>
                 </div>
             </div>
+
+            <div class="notice mt-4">
+                현재 모델은 AI Hub 관측 지역 기준 예측입니다. 실제 GPS 기반 현재 위치 예측은 향후 데이터 연동으로 확장할 수 있습니다.
+            </div>
         </div>
 
-        <div class="col-lg-6">
-            <div class="card h-100">
-                <div class="card-body p-4">
-                    <h4 class="fw-bold mb-3">예측 결과</h4>
-
-                    <div id="emptyResult" class="result-empty">
+        <div class="col-lg-8">
+            <div class="card soft-card">
+                <div class="card-body p-4 p-lg-5">
+                    <div class="d-flex flex-column flex-md-row justify-content-between gap-3 mb-4">
                         <div>
-                            <div class="fs-1 mb-3">📍</div>
+                            <span class="hero-badge text-success bg-success bg-opacity-10 border-0">예측 결과</span>
+                            <h3 class="section-title mt-2 mb-0">야생동물 출몰 위험 분석</h3>
+                        </div>
+                        <div id="gradePill" class="grade-pill grade-medium align-self-start d-none">
+                            위험 수준 확인 중
+                        </div>
+                    </div>
+
+                    <div id="emptyState" class="empty-state">
+                        <div>
+                            <div class="display-6 mb-3">🌿</div>
+                            <h5 class="fw-bold">조건을 입력하고 위험도를 확인하세요.</h5>
                             <p class="mb-0">
-                                지역과 주변 환경을 입력한 뒤<br>
-                                위험도 확인 버튼을 눌러주세요.
+                                예측 후 위험 점수, 위험 등급, 주요 동물, 권장 행동이 표시됩니다.
                             </p>
                         </div>
                     </div>
 
-                    <div id="resultBox" class="result-hidden">
+                    <div id="resultArea" class="d-none">
 
-                        <div class="text-center mb-4">
-                            <div class="text-muted mb-2">내 주변 예상 위험 점수</div>
-                            <div id="predictedScore" class="risk-score">-</div>
-                            <div id="riskGrade" class="risk-grade mt-2">-</div>
-                        </div>
-
-                        <div id="summaryBox" class="summary-box mb-4">
-                            <h5 class="fw-bold mb-2">위험도 설명</h5>
-                            <p id="messageText" class="mb-0">-</p>
-                        </div>
-
-                        <div class="mb-4">
-                            <h5 class="fw-bold mb-2">주의할 가능성이 높은 동물</h5>
-                            <div id="mainSpecies" class="fs-4 fw-bold">-</div>
-                        </div>
-
-                        <div class="mb-4">
-                            <h5 class="fw-bold mb-3">권장 행동</h5>
-                            <ul id="actionList" class="action-list mb-0"></ul>
-                        </div>
-
-                        <button
-                            class="btn btn-outline-secondary btn-sm"
-                            type="button"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#detailInfo"
-                        >
-                            상세 정보 보기
-                        </button>
-
-                        <div class="collapse mt-3" id="detailInfo">
-                            <div class="detail-box">
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <div class="text-muted small">모델 유형</div>
-                                        <div id="modelType" class="fw-bold">-</div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="text-muted small">참고 관측 수</div>
-                                        <div id="historicalCount" class="fw-bold">-</div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="text-muted small">MAE</div>
-                                        <div id="maeValue" class="fw-bold">-</div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="text-muted small">RMSE</div>
-                                        <div id="rmseValue" class="fw-bold">-</div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="text-muted small">R2 Score</div>
-                                        <div id="r2Value" class="fw-bold">-</div>
+                        <div class="row g-4 align-items-center mb-4">
+                            <div class="col-md-4 text-center">
+                                <div id="scoreCircle" class="score-circle">
+                                    <div class="score-inner">
+                                        <span id="scoreValue" class="score-number">-</span>
+                                        <span class="score-caption">위험 점수</span>
                                     </div>
                                 </div>
-                                <hr>
-                                <div class="small text-muted">
-                                    DB 저장 여부: <span id="savedStatus">-</span>
+                            </div>
+
+                            <div class="col-md-8">
+                                <div class="row g-3">
+                                    <div class="col-sm-6">
+                                        <div class="summary-card">
+                                            <div class="summary-label">위험 등급</div>
+                                            <div id="gradeValue" class="summary-value">-</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="summary-card">
+                                            <div class="summary-label">주의 동물</div>
+                                            <div id="speciesValue" class="summary-value">-</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="summary-card">
+                                            <div class="summary-label">참고 관측 수</div>
+                                            <div id="historyCountValue" class="summary-value">-</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="summary-card">
+                                            <div class="summary-label">선택 지역</div>
+                                            <div id="locationValue" class="summary-value">-</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="message-box mb-4">
+                            <h5 class="fw-bold mb-2">위험도 설명</h5>
+                            <div id="messageValue">-</div>
+                        </div>
+
+                        <div class="card border-0 bg-white mb-4">
+                            <div class="card-body p-0">
+                                <h5 class="fw-bold mb-3">권장 행동</h5>
+                                <ul id="actionList" class="action-list"></ul>
+                            </div>
+                        </div>
+
+                        <div class="accordion" id="detailAccordion">
+                            <div class="accordion-item border rounded-4 overflow-hidden">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#detailCollapse">
+                                        모델 상세 정보 보기
+                                    </button>
+                                </h2>
+                                <div id="detailCollapse" class="accordion-collapse collapse" data-bs-parent="#detailAccordion">
+                                    <div class="accordion-body">
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <div class="small-metric">
+                                                    <span class="text-muted small">모델 유형</span>
+                                                    <strong id="modelTypeValue">-</strong>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="small-metric">
+                                                    <span class="text-muted small">MAE</span>
+                                                    <strong id="maeValue">-</strong>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="small-metric">
+                                                    <span class="text-muted small">RMSE</span>
+                                                    <strong id="rmseValue">-</strong>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="small-metric">
+                                                    <span class="text-muted small">R2 Score</span>
+                                                    <strong id="r2Value">-</strong>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="small-metric">
+                                                    <span class="text-muted small">평균 객체 수</span>
+                                                    <strong id="avgObjectValue">-</strong>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="small-metric">
+                                                    <span class="text-muted small">DB 저장 여부</span>
+                                                    <strong id="savedValue">-</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="notice mt-3 mb-0">
+                                            모델 성능 지표는 실제 사고 예측 정확도가 아니라, AI Hub 관측 메타데이터 기반으로 설계된 위험 점수 체계를 학습한 결과입니다.
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                     </div>
 
-                    <div id="errorBox" class="alert alert-danger result-hidden mt-3"></div>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-4">
+                <div class="col-md-4">
+                    <div class="summary-card">
+                        <h6 class="fw-bold">낮음</h6>
+                        <p class="text-muted small mb-0">즉각적인 위험은 낮지만 반복 출현 여부를 확인하세요.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="summary-card">
+                        <h6 class="fw-bold">보통</h6>
+                        <p class="text-muted small mb-0">주변을 주의 깊게 살피고 야간 이동을 조심하세요.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="summary-card">
+                        <h6 class="fw-bold">높음</h6>
+                        <p class="text-muted small mb-0">야간 이동을 피하고 야생동물 발견 시 접근하지 마세요.</p>
+                    </div>
                 </div>
             </div>
         </div>
 
     </div>
-
-    <div class="card mt-4">
-        <div class="card-body p-4">
-            <h5 class="fw-bold">위험 수준 안내</h5>
-
-            <div class="row g-3 mt-2">
-                <div class="col-md-4">
-                    <div class="summary-box summary-low">
-                        <h6 class="fw-bold grade-low">낮음</h6>
-                        <p class="mb-0 small">
-                            즉각적인 위험은 낮지만, 반복 출현 여부는 확인하는 것이 좋습니다.
-                        </p>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="summary-box summary-medium">
-                        <h6 class="fw-bold grade-medium">보통</h6>
-                        <p class="mb-0 small">
-                            주변을 주의 깊게 살피고, 야간 이동이나 단독 접근은 조심하세요.
-                        </p>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="summary-box summary-high">
-                        <h6 class="fw-bold grade-high">높음</h6>
-                        <p class="mb-0 small">
-                            야간 이동을 피하고, 야생동물을 발견하면 가까이 가지 마세요.
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <p class="text-muted small mt-3 mb-0">
-                현재 모델은 AI Hub 관측 데이터의 위치 유형, 날씨, 시간대, 계절 정보를 활용한 예측입니다.
-                실제 행정구역별 신고 데이터가 추가되면 더 세밀한 지역 예측으로 확장할 수 있습니다.
-            </p>
-        </div>
-    </div>
-
-</div>
+</main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    const form = document.getElementById("riskForm");
-    const predictBtn = document.getElementById("predictBtn");
+    const riskForm = document.getElementById("riskForm");
+    const submitBtn = document.getElementById("submitBtn");
+    const emptyState = document.getElementById("emptyState");
+    const resultArea = document.getElementById("resultArea");
+    const gradePill = document.getElementById("gradePill");
 
-    const emptyResult = document.getElementById("emptyResult");
-    const resultBox = document.getElementById("resultBox");
-    const errorBox = document.getElementById("errorBox");
-
-    const predictedScore = document.getElementById("predictedScore");
-    const riskGrade = document.getElementById("riskGrade");
-    const summaryBox = document.getElementById("summaryBox");
-    const messageText = document.getElementById("messageText");
-    const mainSpecies = document.getElementById("mainSpecies");
-    const actionList = document.getElementById("actionList");
-
-    const modelType = document.getElementById("modelType");
-    const historicalCount = document.getElementById("historicalCount");
-    const maeValue = document.getElementById("maeValue");
-    const rmseValue = document.getElementById("rmseValue");
-    const r2Value = document.getElementById("r2Value");
-    const savedStatus = document.getElementById("savedStatus");
-
-    function getInputData() {
+    function getRiskInput() {
         return {
             region_name: document.getElementById("region_name").value,
             location: document.getElementById("location").value,
@@ -430,96 +642,117 @@
         };
     }
 
-    function getKoreanGrade(grade) {
+    function getGradeClass(grade) {
         if (grade === "high") {
-            return "높음";
+            return "grade-high";
         }
-
         if (grade === "medium") {
-            return "보통";
+            return "grade-medium";
         }
-
-        return "낮음";
+        return "grade-low";
     }
 
-    function setGradeStyle(grade) {
-        predictedScore.className = "risk-score";
-        riskGrade.className = "risk-grade mt-2";
-        summaryBox.className = "summary-box mb-4";
-
+    function getGradeIcon(grade) {
         if (grade === "high") {
-            predictedScore.classList.add("grade-high");
-            riskGrade.classList.add("grade-high");
-            summaryBox.classList.add("summary-high");
-            return;
+            return "⚠️";
         }
-
         if (grade === "medium") {
-            predictedScore.classList.add("grade-medium");
-            riskGrade.classList.add("grade-medium");
-            summaryBox.classList.add("summary-medium");
-            return;
+            return "주의";
+        }
+        return "안전";
+    }
+
+    function updateScoreCircle(score, grade) {
+        const scoreCircle = document.getElementById("scoreCircle");
+        const safeScore = Number(score || 0);
+        const degree = Math.max(0, Math.min(100, safeScore)) * 3.6;
+
+        let color = "#198754";
+        if (grade === "medium") {
+            color = "#ffc107";
+        }
+        if (grade === "high") {
+            color = "#dc3545";
         }
 
-        predictedScore.classList.add("grade-low");
-        riskGrade.classList.add("grade-low");
-        summaryBox.classList.add("summary-low");
+        scoreCircle.style.background =
+            `conic-gradient(${color} 0deg, ${color} ${degree}deg, #e9f1ec ${degree}deg, #e9f1ec 360deg)`;
+    }
+
+    function setText(id, value, fallback = "-") {
+        document.getElementById(id).textContent =
+            value === undefined || value === null || value === "" ? fallback : value;
     }
 
     function renderActions(actions) {
+        const actionList = document.getElementById("actionList");
         actionList.innerHTML = "";
 
         if (!actions || actions.length === 0) {
             const li = document.createElement("li");
-            li.textContent = "주변 상황을 주의 깊게 확인하세요.";
+            li.innerHTML = `<span class="check-icon">!</span><span>권장 행동 정보가 없습니다.</span>`;
             actionList.appendChild(li);
             return;
         }
 
-        actions.forEach(function (action) {
+        actions.forEach((action) => {
             const li = document.createElement("li");
-            li.textContent = action;
+            li.innerHTML = `<span class="check-icon">✓</span><span></span>`;
+            li.querySelector("span:last-child").textContent = action;
             actionList.appendChild(li);
         });
     }
 
-    function showResult(data) {
-        const result = data.result;
+    function renderResult(data) {
+        const result = data.result || {};
         const metrics = result.metrics || {};
-        const grade = result.risk_grade;
+        const profile = result.profile || {};
+        const grade = result.risk_grade || result.risk_level || "low";
+        const gradeKorean = result.risk_grade_korean || "-";
+        const score = result.predicted_score ?? result.risk_score ?? "-";
 
-        emptyResult.classList.add("result-hidden");
-        errorBox.classList.add("result-hidden");
-        resultBox.classList.remove("result-hidden");
+        emptyState.classList.add("d-none");
+        resultArea.classList.remove("d-none");
 
-        predictedScore.textContent = result.predicted_score;
-        riskGrade.textContent = getKoreanGrade(grade);
-        messageText.textContent = result.message;
-        mainSpecies.textContent = result.main_risk_species || "확인 필요";
+        gradePill.className = `grade-pill ${getGradeClass(grade)} align-self-start`;
+        gradePill.textContent = `${getGradeIcon(grade)} 위험 수준: ${gradeKorean}`;
 
-        modelType.textContent = result.model_type || "-";
-        historicalCount.textContent = result.historical_count ?? "-";
-        maeValue.textContent = metrics.mae ?? "-";
-        rmseValue.textContent = metrics.rmse ?? "-";
-        r2Value.textContent = metrics.r2 ?? "-";
-        savedStatus.textContent = data.saved_to_db ? "저장됨" : "저장 안 됨";
+        setText("scoreValue", score);
+        setText("gradeValue", gradeKorean);
+        setText("speciesValue", result.main_risk_species);
+        setText("historyCountValue", result.historical_count ? `${result.historical_count}건` : "-");
+        setText("locationValue", result.location);
+        setText("messageValue", result.message);
+        setText("modelTypeValue", result.model_type);
+        setText("maeValue", metrics.mae);
+        setText("rmseValue", metrics.rmse);
+        setText("r2Value", metrics.r2);
+        setText("avgObjectValue", profile.avg_object_count);
+        setText("savedValue", data.saved || data.saved_to_db ? "저장됨" : "미저장");
 
-        setGradeStyle(grade);
         renderActions(result.actions);
+        updateScoreCircle(score, grade);
     }
 
-    function showError(message) {
-        resultBox.classList.add("result-hidden");
-        emptyResult.classList.add("result-hidden");
-        errorBox.classList.remove("result-hidden");
-        errorBox.textContent = message;
+    function renderError(message) {
+        emptyState.classList.remove("d-none");
+        resultArea.classList.add("d-none");
+        gradePill.classList.add("d-none");
+
+        emptyState.innerHTML = `
+            <div>
+                <div class="display-6 mb-3">⚠️</div>
+                <h5 class="fw-bold">예측 요청에 실패했습니다.</h5>
+                <p class="mb-0">${message}</p>
+            </div>
+        `;
     }
 
-    form.addEventListener("submit", async function (event) {
+    riskForm.addEventListener("submit", async function (event) {
         event.preventDefault();
 
-        predictBtn.disabled = true;
-        predictBtn.textContent = "확인 중...";
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `예측 중 <span class="loading-dot ms-1"></span><span class="loading-dot ms-1"></span><span class="loading-dot ms-1"></span>`;
 
         try {
             const response = await fetch("/api/risk/predict", {
@@ -527,23 +760,23 @@
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify(getInputData())
+                body: JSON.stringify(getRiskInput())
             });
 
             const data = await response.json();
 
             if (!response.ok || !data.success) {
-                showError(data.message || "위험도 확인에 실패했습니다.");
+                renderError(data.message || "위험도 예측에 실패했습니다.");
                 return;
             }
 
-            showResult(data);
+            renderResult(data);
 
         } catch (error) {
-            showError("서버와 통신 중 오류가 발생했습니다: " + error);
+            renderError("서버와 통신 중 오류가 발생했습니다: " + error);
         } finally {
-            predictBtn.disabled = false;
-            predictBtn.textContent = "내 주변 위험도 확인하기";
+            submitBtn.disabled = false;
+            submitBtn.textContent = "내 주변 위험도 확인하기";
         }
     });
 </script>
