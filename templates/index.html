@@ -3,13 +3,297 @@
 <head>
     <meta charset="UTF-8">
     <title>WildGuard AI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <style>
+        :root {
+            --wg-green: #14532d;
+            --wg-green-2: #198754;
+            --wg-green-3: #0f3d24;
+            --wg-soft-green: #eef7f1;
+            --wg-bg: #f4f7f4;
+            --wg-ink: #1f2d24;
+            --wg-muted: #667085;
+            --wg-border: #dfe7e2;
+            --wg-yellow: #ffc107;
+        }
+
+        body {
+            background:
+                radial-gradient(circle at 4% 2%, rgba(25, 135, 84, 0.16), transparent 28%),
+                linear-gradient(180deg, #edf7ef 0%, #f8faf8 44%, #ffffff 100%);
+            color: var(--wg-ink);
+        }
+
+        .navbar {
+            background: rgba(20, 83, 45, 0.96);
+            backdrop-filter: blur(10px);
+        }
+
+        .hero {
+            position: relative;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 80% 10%, rgba(255, 193, 7, 0.28), transparent 20%),
+                radial-gradient(circle at 14% 18%, rgba(255, 255, 255, 0.16), transparent 24%),
+                linear-gradient(135deg, #123d24 0%, #1f6b3a 50%, #173822 100%);
+            color: white;
+            border-radius: 32px;
+            padding: 56px 48px;
+            box-shadow: 0 28px 70px rgba(20, 83, 45, 0.26);
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            right: -60px;
+            bottom: -80px;
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.14);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 999px;
+            padding: 8px 14px;
+            font-size: 0.88rem;
+            font-weight: 800;
+        }
+
+        .hero h1 {
+            font-weight: 950;
+            letter-spacing: -0.055em;
+        }
+
+        .hero .lead {
+            color: rgba(255, 255, 255, 0.88);
+            line-height: 1.7;
+        }
+
+        .btn-hero-primary,
+        .btn-hero-secondary,
+        .btn-hero-warning {
+            border: none;
+            border-radius: 16px;
+            padding: 14px 18px;
+            font-weight: 900;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+        }
+
+        .btn-hero-primary {
+            background: #ffffff;
+            color: var(--wg-green);
+        }
+
+        .btn-hero-primary:hover {
+            background: #edf7ef;
+            color: var(--wg-green);
+        }
+
+        .btn-hero-secondary {
+            background: rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.24);
+            color: #ffffff;
+        }
+
+        .btn-hero-secondary:hover {
+            background: rgba(255, 255, 255, 0.22);
+            color: #ffffff;
+        }
+
+        .btn-hero-warning {
+            background: var(--wg-yellow);
+            color: #2f2500;
+        }
+
+        .btn-hero-warning:hover {
+            background: #ffca2c;
+            color: #2f2500;
+        }
+
+        .soft-card {
+            border: 1px solid rgba(20, 83, 45, 0.08);
+            border-radius: 24px;
+            box-shadow: 0 12px 35px rgba(16, 24, 40, 0.08);
+            background: #ffffff;
+        }
+
+        .section-title {
+            font-weight: 950;
+            letter-spacing: -0.04em;
+        }
+
+        .section-desc {
+            color: var(--wg-muted);
+            line-height: 1.7;
+        }
+
+        .feature-card {
+            height: 100%;
+            border: 1px solid var(--wg-border);
+            border-radius: 24px;
+            background: #ffffff;
+            padding: 26px;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 18px 42px rgba(16, 24, 40, 0.1);
+            border-color: rgba(25, 135, 84, 0.35);
+        }
+
+        .feature-icon {
+            width: 54px;
+            height: 54px;
+            display: grid;
+            place-items: center;
+            border-radius: 18px;
+            font-size: 1.45rem;
+            margin-bottom: 18px;
+        }
+
+        .feature-icon.green {
+            background: #e7f7ee;
+            color: #146c43;
+        }
+
+        .feature-icon.blue {
+            background: #e7f0ff;
+            color: #0d6efd;
+        }
+
+        .feature-icon.yellow {
+            background: #fff3cd;
+            color: #8a5d00;
+        }
+
+        .feature-card h5 {
+            font-weight: 900;
+        }
+
+        .feature-card p {
+            color: var(--wg-muted);
+            line-height: 1.65;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 6px 11px;
+            font-size: 0.82rem;
+            font-weight: 800;
+        }
+
+        .status-ready {
+            background: #e7f7ee;
+            color: #146c43;
+        }
+
+        .status-progress {
+            background: #e7f0ff;
+            color: #0d6efd;
+        }
+
+        .metric-card {
+            border: 1px solid #edf1ee;
+            background: #fbfdfb;
+            border-radius: 20px;
+            padding: 20px;
+            height: 100%;
+        }
+
+        .metric-card span {
+            display: block;
+            color: var(--wg-muted);
+            font-size: 0.86rem;
+            font-weight: 700;
+        }
+
+        .metric-card strong {
+            display: block;
+            margin-top: 6px;
+            font-size: 1.1rem;
+            font-weight: 900;
+        }
+
+        .flow-step {
+            position: relative;
+            border: 1px solid var(--wg-border);
+            border-radius: 20px;
+            padding: 20px;
+            background: #ffffff;
+            height: 100%;
+        }
+
+        .flow-num {
+            width: 34px;
+            height: 34px;
+            display: inline-grid;
+            place-items: center;
+            border-radius: 50%;
+            background: var(--wg-green);
+            color: white;
+            font-weight: 900;
+            margin-bottom: 12px;
+        }
+
+        .cta {
+            background:
+                radial-gradient(circle at 84% 20%, rgba(255, 193, 7, 0.22), transparent 22%),
+                linear-gradient(135deg, #f6fff8 0%, #ffffff 62%);
+            border: 1px solid rgba(25, 135, 84, 0.14);
+            border-radius: 28px;
+            padding: 38px;
+        }
+
+        .footer {
+            background: #0f2e1c;
+            color: white;
+        }
+
+        .footer a {
+            color: rgba(255, 255, 255, 0.86);
+        }
+
+        .footer a:hover {
+            color: #ffffff;
+        }
+
+        @media (max-width: 768px) {
+            .hero {
+                padding: 34px 26px;
+                border-radius: 24px;
+            }
+
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+        }
+    </style>
 </head>
 
-<body class="bg-light">
+<body>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<nav class="navbar navbar-expand-lg navbar-dark sticky-top">
     <div class="container">
         <a class="navbar-brand fw-bold" href="/">WildGuard AI</a>
 
@@ -22,378 +306,335 @@
                 <li class="nav-item">
                     <a class="nav-link active" href="/">홈</a>
                 </li>
-
                 <li class="nav-item">
                     <a class="nav-link" href="/risk">위험도 예측</a>
                 </li>
-
                 <li class="nav-item">
                     <a class="nav-link" href="/vision">이미지/영상 탐지</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/chat">상담 챗봇</a>
                 </li>
 
                 {% if session.get("user_id") %}
                     <li class="nav-item">
                         <a class="nav-link" href="/risk/history">예측 기록</a>
                     </li>
-                {% endif %}
-
-                <li class="nav-item">
-                    <a class="nav-link" href="/chat">상담 챗봇</a>
-                </li>
-
-                <li class="nav-item ms-lg-3">
-                    {% if session.get("user_id") %}
-                        <span class="navbar-text text-light me-2">
-                            {{ session.get("name") }}님
-                        </span>
-                    {% else %}
-                        <a class="nav-link" href="/auth/login">로그인</a>
-                    {% endif %}
-                </li>
-
-                <li class="nav-item">
-                    {% if session.get("user_id") %}
+                    <li class="nav-item ms-lg-3">
+                        <span class="navbar-text text-light me-2">{{ session.get("name") }}님</span>
+                    </li>
+                    <li class="nav-item">
                         <a class="btn btn-outline-light btn-sm" href="/auth/logout">로그아웃</a>
-                    {% else %}
-                        <a class="btn btn-primary btn-sm" href="/auth/register">회원가입</a>
-                    {% endif %}
-                </li>
+                    </li>
+                {% else %}
+                    <li class="nav-item ms-lg-3">
+                        <a class="nav-link" href="/auth/login">로그인</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-light btn-sm" href="/auth/register">회원가입</a>
+                    </li>
+                {% endif %}
             </ul>
         </div>
     </div>
 </nav>
 
-<header>
-    <div id="mainCarousel" class="carousel slide" data-bs-ride="carousel">
-        <div class="carousel-indicators">
-            <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="0" class="active"></button>
-            <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="1"></button>
-            <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="2"></button>
-        </div>
+<main class="container py-5">
 
-        <div class="carousel-inner">
-            <div class="carousel-item active">
-                <div class="bg-dark text-white d-flex align-items-center" style="height: 440px;">
-                    <div class="container">
-                        <span class="badge bg-success mb-3">1차 ML · 2차 Vision · 3·4차 Chatbot</span>
-                        <h1 class="display-4 fw-bold">WildGuard AI</h1>
-                        <p class="lead mt-3">
-                            AI Hub 야생동물 관측 데이터를 기반으로 지역별 출몰 위험도를 예측하고,
-                            이미지/영상 탐지와 대응 상담을 제공하는 AI 서비스입니다.
-                        </p>
+    <section class="hero mb-5">
+        <div class="hero-content">
+            <div class="row align-items-center g-5">
+                <div class="col-lg-8">
+                    <span class="hero-badge">야생동물 위험 대응 지원 서비스</span>
+                    <h1 class="display-4 mt-3 mb-3">WildGuard AI</h1>
+                    <p class="lead mb-4">
+                        AI Hub 야생동물 관측 데이터를 기반으로 지역별 출몰 위험도를 예측하고,
+                        이미지/영상 탐지와 대응 상담을 함께 제공하는 AI 서비스입니다.
+                    </p>
 
-                        <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
-                            <a href="/risk" class="btn btn-primary btn-lg">
-                                위험도 예측하기
-                            </a>
-                            <a href="/vision" class="btn btn-success btn-lg">
-                                이미지/영상 탐지하기
-                            </a>
-                            <a href="/chat" class="btn btn-warning btn-lg">
-                                대응 상담하기
-                            </a>
+                    <div class="d-flex flex-column flex-sm-row gap-2">
+                        <a href="/risk" class="btn btn-hero-primary btn-lg">위험도 예측하기</a>
+                        <a href="/vision" class="btn btn-hero-secondary btn-lg">이미지/영상 탐지하기</a>
+                        <a href="/chat" class="btn btn-hero-warning btn-lg">대응 상담하기</a>
 
-                            {% if session.get("user_id") %}
-                                <a href="/risk/history" class="btn btn-outline-light btn-lg">
-                                    내 예측 기록 보기
-                                </a>
-                            {% else %}
-                                <a href="/auth/register" class="btn btn-outline-light btn-lg">
-                                    회원가입 후 기록 저장
-                                </a>
-                            {% endif %}
+                        {% if session.get("user_id") %}
+                            <a href="/risk/history" class="btn btn-hero-secondary btn-lg">내 예측 기록</a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="soft-card p-4 bg-white bg-opacity-10 border-0 text-white">
+                        <h5 class="fw-bold mb-3">현재 제공 기능</h5>
+                        <div class="d-flex flex-column gap-3">
+                            <div class="d-flex justify-content-between gap-3">
+                                <span>위험도 예측</span>
+                                <strong>가능</strong>
+                            </div>
+                            <div class="d-flex justify-content-between gap-3">
+                                <span>이미지/영상 탐지</span>
+                                <strong>가능</strong>
+                            </div>
+                            <div class="d-flex justify-content-between gap-3">
+                                <span>대응 상담</span>
+                                <strong>가능</strong>
+                            </div>
+                            <div class="d-flex justify-content-between gap-3">
+                                <span>예측 기록</span>
+                                <strong>로그인 필요</strong>
+                            </div>
                         </div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="carousel-item">
-                <div class="bg-success text-white d-flex align-items-center" style="height: 440px;">
-                    <div class="container">
-                        <span class="badge bg-light text-success mb-3">Risk Prediction</span>
-                        <h1 class="display-5 fw-bold">AI Hub 관측 지역 기반 야생동물 위험도 예측</h1>
-                        <p class="lead mt-3">
-                            AI Hub 야생동물 관측 지역, 날씨, 시간대, 계절 정보를 기반으로
-                            해당 조건의 야생동물 출몰 위험 점수를 예측합니다.
-                        </p>
-                        <a href="/risk" class="btn btn-light btn-lg mt-3">
-                            위험도 예측 화면으로 이동
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="carousel-item">
-                <div class="bg-secondary text-white d-flex align-items-center" style="height: 440px;">
-                    <div class="container">
-                        <span class="badge bg-light text-secondary mb-3">Vision Detection</span>
-                        <h1 class="display-5 fw-bold">YOLO 기반 이미지/영상 야생동물 탐지</h1>
-                        <p class="lead mt-3">
-                            업로드한 이미지와 짧은 영상에서 사족보행 야생동물을 탐지하고,
-                            confidence와 bbox 결과를 시각적으로 확인합니다.
-                        </p>
-                        <a href="/vision" class="btn btn-light btn-lg mt-3">
-                            이미지/영상 탐지 화면으로 이동
-                        </a>
+                        {% if not session.get("user_id") %}
+                            <a href="/auth/register" class="btn btn-light w-100 fw-bold mt-4">
+                                회원가입 후 기록 저장
+                            </a>
+                        {% else %}
+                            <a href="/risk/history" class="btn btn-light w-100 fw-bold mt-4">
+                                예측 기록 보기
+                            </a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
+    </section>
 
-        <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
-            <span class="carousel-control-prev-icon"></span>
-        </button>
-
-        <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
-            <span class="carousel-control-next-icon"></span>
-        </button>
-    </div>
-</header>
-
-<main class="container my-5">
-
-    <section class="mb-5 text-center">
-        <h2 class="fw-bold">야생동물 출현 위험 예측 및 대응 지원 AI 서비스</h2>
-        <p class="text-muted mt-3">
-            WildGuard AI는 농장주, 산림관리원, 지자체 담당자, 일반 사용자를 위한
-            데이터 기반 야생동물 위험 분석 서비스입니다.
+    <section class="text-center mb-5">
+        <h2 class="section-title">야생동물 출몰 위험 예측 및 대응 지원</h2>
+        <p class="section-desc mt-3 mb-0">
+            농장주, 산림관리원, 지자체 담당자, 일반 사용자가
+            지역 기반 위험도와 현장 대응 방법을 빠르게 확인할 수 있도록 설계했습니다.
         </p>
     </section>
 
-    <section class="alert alert-primary shadow-sm mb-5">
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
-            <div>
-                <h5 class="fw-bold mb-1">회원 예측 기록 저장 기능 제공</h5>
-                <p class="mb-0">
-                    비회원은 위험도 예측을 체험할 수 있고, 로그인 사용자는 예측 결과를 Oracle DB에 저장하고 다시 조회할 수 있습니다.
-                </p>
-            </div>
-
-            {% if not session.get("user_id") %}
-                <a href="/auth/register" class="btn btn-primary mt-3 mt-md-0">
-                    회원가입
-                </a>
-            {% else %}
-                <a href="/risk/history" class="btn btn-primary mt-3 mt-md-0">
-                    예측 기록 보기
-                </a>
-            {% endif %}
-        </div>
-    </section>
-
     <section class="row g-4 mb-5">
-        <div class="col-md-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body d-flex flex-column">
-                    <h5 class="card-title fw-bold">위험도 예측</h5>
-                    <p class="card-text">
-                        AI Hub 관측 지역, 날씨, 시간대, 계절 조건을 기반으로
-                        야생동물 출몰 위험 점수를 예측합니다.
-                    </p>
-                    <span class="badge bg-success align-self-start">이용 가능</span>
-                    <div class="mt-auto">
-                        <a href="/risk" class="btn btn-sm btn-outline-primary mt-3">
-                            예측 시작
-                        </a>
-                    </div>
+        <div class="col-lg-4">
+            <div class="feature-card">
+                <div class="feature-icon blue">📍</div>
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
+                    <h5 class="mb-0">위험도 예측</h5>
+                    <span class="status-badge status-ready">이용 가능</span>
                 </div>
+                <p>
+                    AI Hub 관측 지역, 날씨, 시간대, 계절 조건을 기반으로
+                    야생동물 출몰 위험 점수와 등급을 예측합니다.
+                </p>
+                <a href="/risk" class="btn btn-outline-primary fw-bold rounded-3">
+                    예측 시작
+                </a>
             </div>
         </div>
 
-        <div class="col-md-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body d-flex flex-column">
-                    <h5 class="card-title fw-bold">이미지/영상 탐지</h5>
-                    <p class="card-text">
-                        YOLO 모델로 업로드한 이미지와 짧은 영상에서 야생동물을 탐지하고
-                        탐지 결과를 시각적으로 확인합니다.
-                    </p>
-                    <span class="badge bg-success align-self-start">이용 가능</span>
-                    <div class="mt-auto">
-                        <a href="/vision" class="btn btn-sm btn-outline-success mt-3">
-                            탐지 시작
-                        </a>
-                    </div>
+        <div class="col-lg-4">
+            <div class="feature-card">
+                <div class="feature-icon green">🦌</div>
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
+                    <h5 class="mb-0">이미지/영상 탐지</h5>
+                    <span class="status-badge status-ready">이용 가능</span>
                 </div>
+                <p>
+                    YOLO 모델로 업로드한 이미지와 짧은 영상에서 야생동물을 탐지하고
+                    탐지 결과를 시각적으로 확인합니다.
+                </p>
+                <a href="/vision" class="btn btn-outline-success fw-bold rounded-3">
+                    탐지 시작
+                </a>
             </div>
         </div>
 
-        <div class="col-md-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body d-flex flex-column">
-                    <h5 class="card-title fw-bold">대응 상담 챗봇</h5>
-                    <p class="card-text">
-                        위험도 예측 결과를 바탕으로 야생동물 대응 방법을 안내합니다.
-                        3차 LLM은 상세 상담, 4차 SLM은 현장용 빠른 안내 역할로 확장합니다.
-                    </p>
-                    <span class="badge bg-success align-self-start">이용 가능</span>
-                    <div class="mt-auto">
-                        <a href="/chat" class="btn btn-sm btn-outline-warning mt-3">
-                            상담 시작
-                        </a>
-                    </div>
+        <div class="col-lg-4">
+            <div class="feature-card">
+                <div class="feature-icon yellow">💬</div>
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
+                    <h5 class="mb-0">대응 상담 챗봇</h5>
+                    <span class="status-badge status-ready">이용 가능</span>
                 </div>
+                <p>
+                    위험도 예측 결과를 바탕으로 상세 상담과 현장 대응 모드를 제공해
+                    상황에 맞는 행동 요령을 안내합니다.
+                </p>
+                <a href="/chat" class="btn btn-outline-warning fw-bold rounded-3">
+                    상담 시작
+                </a>
             </div>
         </div>
     </section>
 
-    <section class="card shadow-sm mb-5">
-        <div class="card-body p-4">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
-                <div>
-                    <h3 class="fw-bold mb-1">서비스 구현 현황</h3>
-                    <p class="text-muted mb-0">
-                        WildGuard AI 현재 구현 기준 주요 기능입니다.
+    <section class="card soft-card mb-5">
+        <div class="card-body p-4 p-lg-5">
+            <div class="row align-items-center g-4 mb-4">
+                <div class="col-lg-8">
+                    <h3 class="section-title mb-2">서비스 구현 현황</h3>
+                    <p class="section-desc mb-0">
+                        현재 구현된 주요 기능과 모델, 데이터 처리 흐름입니다.
                     </p>
                 </div>
-                <span class="badge bg-primary mt-3 mt-md-0">1차 ML · 2차 Vision · 3·4차 Chatbot</span>
+                <div class="col-lg-4 text-lg-end">
+                    <span class="status-badge status-progress">위험도 예측 · 탐지 · 상담</span>
+                </div>
             </div>
-
-            <hr>
 
             <div class="row g-3">
                 <div class="col-md-4">
-                    <div class="border rounded p-3 h-100 bg-light">
-                        <h6 class="fw-bold">위험도 예측 모델</h6>
-                        <p class="text-muted mb-2">
-                            AI Hub 관측 지역 기반 RandomForestRegressor 위험 점수 예측
-                        </p>
-                        <span class="badge bg-success">완료</span>
+                    <div class="metric-card">
+                        <span>위험도 예측 모델</span>
+                        <strong>AI Hub 관측 지역 기반 위험 점수 예측</strong>
                     </div>
                 </div>
-
                 <div class="col-md-4">
-                    <div class="border rounded p-3 h-100 bg-light">
-                        <h6 class="fw-bold">이미지/영상 탐지</h6>
-                        <p class="text-muted mb-2">
-                            YOLO 기반 이미지 업로드 탐지와 영상 프레임 분석 화면 구현
-                        </p>
-                        <span class="badge bg-success">완료</span>
+                    <div class="metric-card">
+                        <span>탐지 모델</span>
+                        <strong>YOLO 기반 이미지/영상 야생동물 탐지</strong>
                     </div>
                 </div>
-
                 <div class="col-md-4">
-                    <div class="border rounded p-3 h-100 bg-light">
-                        <h6 class="fw-bold">대응 상담 챗봇</h6>
-                        <p class="text-muted mb-2">
-                            위험도 예측 결과를 바탕으로 사용자 질문에 대응 요령을 안내하는 상담 기능
-                        </p>
-                        <span class="badge bg-success">완료</span>
+                    <div class="metric-card">
+                        <span>상담 기능</span>
+                        <strong>상세 상담 모드와 현장 대응 모드 제공</strong>
                     </div>
                 </div>
             </div>
 
             <div class="row g-3 mt-1">
-                <div class="col-md-4">
-                    <div class="border rounded p-3 h-100">
-                        <h6 class="fw-bold">1차 ML 입력</h6>
-                        <p class="text-muted mb-0">
-                            관측 지역, 날씨, 시간대, 계절을 입력하면 과거 관측 패턴을 기반으로 위험 점수를 예측합니다.
-                        </p>
+                <div class="col-md-6">
+                    <div class="metric-card">
+                        <span>위험도 예측 입력</span>
+                        <strong>관측 지역, 날씨, 시간대, 계절</strong>
                     </div>
                 </div>
-
-                <div class="col-md-4">
-                    <div class="border rounded p-3 h-100">
-                        <h6 class="fw-bold">2차 Vision 입력</h6>
-                        <p class="text-muted mb-0">
-                            이미지 또는 짧은 영상을 업로드하면 탐지 수, confidence, bbox, 결과 이미지를 제공합니다.
-                        </p>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="border rounded p-3 h-100">
-                        <h6 class="fw-bold">3·4차 상담 입력</h6>
-                        <p class="text-muted mb-0">
-                            사용자의 질문과 위험도 예측 결과를 결합해 상세 상담과 현장용 빠른 안내로 확장합니다.
-                        </p>
+                <div class="col-md-6">
+                    <div class="metric-card">
+                        <span>회원 기능</span>
+                        <strong>로그인 사용자 예측 기록 저장 및 조회</strong>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="text-center">
-        <h3 class="fw-bold mb-3">지금 WildGuard AI를 사용해보세요</h3>
-        <p class="text-muted">
-            관측 지역 기반 위험도 예측, 이미지/영상 탐지, 대응 상담 챗봇을 함께 확인할 수 있습니다.
+    <section class="mb-5">
+        <div class="text-center mb-4">
+            <h3 class="section-title">사용 흐름</h3>
+            <p class="section-desc mb-0">조건 입력부터 상담까지 한 번에 확인할 수 있습니다.</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="flow-step">
+                    <div class="flow-num">1</div>
+                    <h6 class="fw-bold">지역 조건 입력</h6>
+                    <p class="text-muted mb-0 small">
+                        관측 지역, 날씨, 시간대, 계절을 선택합니다.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="flow-step">
+                    <div class="flow-num">2</div>
+                    <h6 class="fw-bold">위험 점수 예측</h6>
+                    <p class="text-muted mb-0 small">
+                        모델이 위험 점수와 위험 등급을 반환합니다.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="flow-step">
+                    <div class="flow-num">3</div>
+                    <h6 class="fw-bold">탐지 결과 확인</h6>
+                    <p class="text-muted mb-0 small">
+                        이미지/영상에서 야생동물 탐지 결과를 확인합니다.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="flow-step">
+                    <div class="flow-num">4</div>
+                    <h6 class="fw-bold">대응 상담</h6>
+                    <p class="text-muted mb-0 small">
+                        위험도 기반 행동 요령을 상담 형태로 확인합니다.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta text-center">
+        <h3 class="section-title mb-3">지금 WildGuard AI를 사용해보세요</h3>
+        <p class="section-desc">
+            지역 기반 위험도 예측, 이미지/영상 탐지, 대응 상담 챗봇을 함께 확인할 수 있습니다.
         </p>
-        <div class="d-flex flex-column flex-sm-row justify-content-center gap-2">
-            <a href="/risk" class="btn btn-primary btn-lg">위험도 예측 화면으로 이동</a>
-            <a href="/vision" class="btn btn-success btn-lg">이미지/영상 탐지 화면으로 이동</a>
-            <a href="/chat" class="btn btn-warning btn-lg">대응 상담 챗봇으로 이동</a>
+        <div class="d-flex flex-column flex-sm-row justify-content-center gap-2 mt-4">
+            <a href="/risk" class="btn btn-primary btn-lg rounded-4 fw-bold">위험도 예측</a>
+            <a href="/vision" class="btn btn-success btn-lg rounded-4 fw-bold">이미지/영상 탐지</a>
+            <a href="/chat" class="btn btn-warning btn-lg rounded-4 fw-bold">대응 상담 챗봇</a>
         </div>
     </section>
 
 </main>
 
-<footer class="bg-dark text-white mt-5 pt-5 pb-3">
+<footer class="footer mt-5 pt-5 pb-4">
     <div class="container">
         <div class="row g-4">
 
             <div class="col-md-4">
                 <h5 class="fw-bold">WildGuard AI</h5>
-                <p class="text-secondary">
+                <p class="text-white-50">
                     AI Hub 야생동물 관측 데이터와 YOLO 비전 모델을 활용하여
-                    야생동물 출현 위험도 예측, 이미지/영상 탐지, 대응 상담으로 확장하는
+                    야생동물 출몰 위험도 예측, 이미지/영상 탐지, 대응 상담을 제공하는
                     AI 기반 위험 대응 지원 서비스입니다.
                 </p>
             </div>
 
             <div class="col-md-4">
-                <h5 class="fw-bold">프로젝트 서비스</h5>
+                <h5 class="fw-bold">서비스</h5>
                 <ul class="list-unstyled">
                     <li class="mb-2">
-                        <a href="/risk" class="text-decoration-none text-light">
-                            야생동물 출현 위험도 예측
-                            <span class="badge bg-success ms-1">이용 가능</span>
+                        <a href="/risk" class="text-decoration-none">
+                            야생동물 출몰 위험도 예측
                         </a>
                     </li>
                     <li class="mb-2">
-                        <a href="/vision" class="text-decoration-none text-light">
+                        <a href="/vision" class="text-decoration-none">
                             야생동물 이미지/영상 탐지
-                            <span class="badge bg-success ms-1">이용 가능</span>
                         </a>
                     </li>
                     <li class="mb-2">
-                        <a href="/chat" class="text-decoration-none text-light">
+                        <a href="/chat" class="text-decoration-none">
                             야생동물 대응 상담 챗봇
-                            <span class="badge bg-success ms-1">이용 가능</span>
                         </a>
                     </li>
-                    <li class="mb-2">
-                        <span class="text-secondary">
-                            현장용 SLM 경량 안내
-                            <span class="badge bg-primary ms-1">상담 서비스 내부 확장</span>
-                        </span>
-                    </li>
+                    {% if session.get("user_id") %}
+                        <li class="mb-2">
+                            <a href="/risk/history" class="text-decoration-none">
+                                내 예측 기록
+                            </a>
+                        </li>
+                    {% endif %}
                 </ul>
             </div>
 
             <div class="col-md-4">
                 <h5 class="fw-bold">프로젝트 정보</h5>
-                <ul class="list-unstyled text-secondary">
-                    <li class="mb-2">1차 ML: AI Hub 관측 지역 기반 위험 점수 예측</li>
-                    <li class="mb-2">2차 Vision: YOLO 기반 이미지/영상 탐지</li>
-                    <li class="mb-2">3차 LLM: 위험도 기반 상세 대응 상담</li>
-                    <li class="mb-2">4차 SLM: 현장용 경량 대응 안내</li>
+                <ul class="list-unstyled text-white-50">
+                    <li class="mb-2">위험도 예측: 지역 기반 위험 점수 예측</li>
+                    <li class="mb-2">탐지: YOLO 기반 야생동물 탐지</li>
+                    <li class="mb-2">상담: 위험도 기반 대응 안내</li>
                     <li class="mb-2">Backend: Flask</li>
                     <li class="mb-2">DB: Oracle DB 연동</li>
-                    <li class="mb-2">모델: RandomForestRegressor, YOLO, LLM/SLM 상담 모델</li>
                 </ul>
             </div>
 
         </div>
 
-        <hr class="border-secondary my-4">
+        <hr class="border-light border-opacity-25 my-4">
 
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
-            <small class="text-secondary">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+            <small class="text-white-50">
                 © 2026 WildGuard AI. Wildlife Risk Prediction & Response Support Service.
             </small>
-            <small class="text-secondary">
-                위험도 예측 이용 가능 · 이미지/영상 탐지 이용 가능 · 대응 상담 이용 가능 · 현장용 SLM 안내는 상담 서비스 내부 확장 예정
+            <small class="text-white-50">
+                위험도 예측 · 이미지/영상 탐지 · 대응 상담
             </small>
         </div>
     </div>
