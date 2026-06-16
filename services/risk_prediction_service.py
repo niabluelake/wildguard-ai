@@ -128,7 +128,7 @@ def make_risk_reasons(input_data: dict) -> list[str]:
 
     species = input_data.get("species")
     if species in ["멧돼지", "반달가슴곰"]:
-        reasons.append(f"{species}은 현장 접근 시 주의가 필요한 종입니다.")
+        reasons.append(f"{species}는 현장 접근 시 주의가 필요한 종입니다.")
 
     object_count = to_int(input_data.get("object_count"))
     if object_count >= 3:
@@ -204,7 +204,6 @@ def predict_risk(input_data: dict) -> dict:
     predicted_score = round(max(0, min(predicted_score, 100)), 2)
 
     predicted_grade = score_to_grade(predicted_score)
-
     full_input = model_input.iloc[0].to_dict()
 
     return {

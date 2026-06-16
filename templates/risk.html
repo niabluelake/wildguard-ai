@@ -592,7 +592,28 @@
                                 </div>
                             </div>
                         </div>
+                    <div id="riskDetailArea" class="mt-4">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title mb-3">상세 위험 분석</h5>
 
+                                    <div class="mb-3">
+                                        <h6 class="fw-bold">주요 위험 요인</h6>
+                                        <ul id="riskReasonsList" class="mb-0"></ul>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <h6 class="fw-bold">현장 대응 가이드</h6>
+                                        <p id="actionMessageText" class="mb-0"></p>
+                                    </div>
+
+                                    <div>
+                                        <h6 class="fw-bold">로드킬 다발 구간 기반 외부 feature</h6>
+                                        <ul id="roadkillFeatureList" class="mb-0"></ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
@@ -633,12 +654,22 @@
     const gradePill = document.getElementById("gradePill");
 
     function getRiskInput() {
+        const timeZone = document.getElementById("time_zone").value;
+
         return {
             region_name: document.getElementById("region_name").value,
             location: document.getElementById("location").value,
             weather: document.getElementById("weather").value,
-            time_zone: document.getElementById("time_zone").value,
-            season: document.getElementById("season").value
+            time_zone: timeZone,
+            season: document.getElementById("season").value,
+
+            // 새 회귀 모델 필수 입력값
+            day: timeZone === "day" ? "day" : "night",
+            camera_type: timeZone === "day" ? "RGB" : "IR",
+            species: "멧돼지",
+            object_count: 4,
+            max_bbox_area_ratio: 0.08,
+            avg_bbox_area_ratio: 0.05
         };
     }
 
@@ -703,12 +734,71 @@
         });
     }
 
+    function renderRiskDetails(result) {
+        const reasonsList = document.getElementById("riskReasonsList");
+        const actionMessageText = document.getElementById("actionMessageText");
+        const roadkillFeatureList = document.getElementById("roadkillFeatureList");
+
+        if (!reasonsList || !actionMessageText || !roadkillFeatureList) {
+            return;
+        }
+
+        reasonsList.innerHTML = "";
+        const reasons = result.risk_reasons || [];
+
+        if (reasons.length === 0) {
+            const li = document.createElement("li");
+            li.textContent = "위험 요인 정보가 없습니다.";
+            reasonsList.appendChild(li);
+        } else {
+            reasons.forEach(function (reason) {
+                const li = document.createElement("li");
+                li.textContent = reason;
+                reasonsList.appendChild(li);
+            });
+        }
+
+        actionMessageText.textContent = result.action_message || result.message || "-";
+
+        roadkillFeatureList.innerHTML = "";
+        const roadkill = result.roadkill_features || {};
+
+        const items = [
+            ["가장 가까운 로드킬 다발 구간 거리", roadkill.nearest_roadkill_distance_km, "km"],
+            ["반경 5km 내 로드킬 발생건수", roadkill.roadkill_count_within_5km, "건"],
+            ["반경 10km 내 로드킬 발생건수", roadkill.roadkill_count_within_10km, "건"],
+            ["반경 20km 내 로드킬 발생건수", roadkill.roadkill_count_within_20km, "건"],
+            ["로드킬 가중 위험 점수", roadkill.roadkill_weighted_score, "점"],
+            ["10km 내 로드킬 hotspot 여부", roadkill.near_roadkill_hotspot, ""]
+        ];
+
+        items.forEach(function (item) {
+            const label = item[0];
+            const value = item[1];
+            const unit = item[2];
+
+            if (value === undefined || value === null) {
+                return;
+            }
+
+            const li = document.createElement("li");
+
+            if (label === "10km 내 로드킬 hotspot 여부") {
+                li.textContent = `${label}: ${Number(value) === 1 ? "있음" : "없음"}`;
+            } else {
+                li.textContent = `${label}: ${value}${unit}`;
+            }
+
+            roadkillFeatureList.appendChild(li);
+        });
+    }
+
     function renderResult(data) {
         const result = data.result || {};
         const metrics = result.metrics || {};
         const profile = result.profile || {};
-        const grade = result.risk_grade || result.risk_level || "low";
-        const gradeKorean = result.risk_grade_korean || "-";
+        const grade = result.predicted_grade || result.risk_grade || result.risk_level || "low";
+        const gradeKorean = result.predicted_grade_ko || result.risk_grade_korean || "-";
         const score = result.predicted_score ?? result.risk_score ?? "-";
 
         emptyState.classList.add("d-none");
@@ -719,10 +809,10 @@
 
         setText("scoreValue", score);
         setText("gradeValue", gradeKorean);
-        setText("speciesValue", result.main_risk_species);
+        setText("speciesValue", result.main_risk_species || "멧돼지");
         setText("historyCountValue", result.historical_count ? `${result.historical_count}건` : "-");
-        setText("locationValue", result.location);
-        setText("messageValue", result.message);
+        setText("locationValue", result.location || document.getElementById("location").value);
+        setText("messageValue", result.action_message || result.message);
         setText("modelTypeValue", result.model_type);
         setText("maeValue", metrics.mae);
         setText("rmseValue", metrics.rmse);
@@ -730,7 +820,8 @@
         setText("avgObjectValue", profile.avg_object_count);
         setText("savedValue", data.saved || data.saved_to_db ? "저장됨" : "미저장");
 
-        renderActions(result.actions);
+        renderActions(result.actions || [result.action_message || result.message]);
+        renderRiskDetails(result);
         updateScoreCircle(score, grade);
     }
 
