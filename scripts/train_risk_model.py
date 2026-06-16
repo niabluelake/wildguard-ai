@@ -14,7 +14,7 @@ from sklearn.preprocessing import OneHotEncoder
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-DATA_PATH = BASE_DIR / "data" / "aihub" / "ml_dataset" / "aihub_wildlife_metadata.csv"
+DATA_PATH = BASE_DIR / "data" / "aihub" / "ml_dataset" / "aihub_wildlife_metadata_enriched.csv"
 MODEL_PATH = BASE_DIR / "models" / "ml" / "risk_regression_model.pkl"
 
 
@@ -46,6 +46,13 @@ def main():
         "object_count",
         "max_bbox_area_ratio",
         "avg_bbox_area_ratio",
+        "nearest_roadkill_distance_km",
+        "roadkill_count_within_5km",
+        "roadkill_count_within_10km",
+        "roadkill_count_within_20km",
+        "roadkill_max_cases_nearby",
+        "roadkill_weighted_score",
+        "near_roadkill_hotspot",
     ]
 
     feature_cols = categorical_features + numeric_features
