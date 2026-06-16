@@ -6,7 +6,92 @@ import pandas as pd
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-MODEL_PATH = BASE_DIR / "models" / "ml" / "area_risk_model.pkl"
+MODEL_PATH = BASE_DIR / "models" / "ml" / "risk_regression_model.pkl"
+
+
+CATEGORICAL_FEATURES = [
+    "day",
+    "camera_type",
+    "weather",
+    "location",
+    "time_zone",
+    "season",
+    "species",
+]
+
+NUMERIC_FEATURES = [
+    "object_count",
+    "max_bbox_area_ratio",
+    "avg_bbox_area_ratio",
+    "nearest_roadkill_distance_km",
+    "roadkill_count_within_5km",
+    "roadkill_count_within_10km",
+    "roadkill_count_within_20km",
+    "roadkill_max_cases_nearby",
+    "roadkill_weighted_score",
+    "near_roadkill_hotspot",
+]
+
+MODEL_FEATURES = CATEGORICAL_FEATURES + NUMERIC_FEATURES
+
+
+REQUIRED_FIELDS = [
+    "day",
+    "camera_type",
+    "weather",
+    "location",
+    "time_zone",
+    "season",
+    "species",
+    "object_count",
+    "max_bbox_area_ratio",
+    "avg_bbox_area_ratio",
+]
+
+
+DEFAULT_ROADKILL_FEATURES = {
+    "nearest_roadkill_distance_km": 13.516,
+    "roadkill_count_within_5km": 0,
+    "roadkill_count_within_10km": 0,
+    "roadkill_count_within_20km": 4,
+    "roadkill_max_cases_nearby": 4,
+    "roadkill_weighted_score": 17.447,
+    "near_roadkill_hotspot": 0,
+}
+
+
+_model = None
+
+
+def load_model():
+    global _model
+
+    if _model is None:
+        if not MODEL_PATH.exists():
+            raise FileNotFoundError(f"모델 파일을 찾을 수 없습니다: {MODEL_PATH}")
+
+        loaded = joblib.load(MODEL_PATH)
+
+        if isinstance(loaded, dict):
+            _model = loaded["model"]
+        else:
+            _model = loaded
+
+    return _model
+
+
+def to_float(value, default=0.0):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def to_int(value, default=0):
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return default
 
 
 def score_to_grade(score: float) -> str:
@@ -25,219 +110,124 @@ def grade_to_korean(risk_grade: str) -> str:
     return "낮음"
 
 
-def get_risk_message(risk_grade: str, region_name: str, location: str, main_species: str) -> str:
-    display_region = region_name or location
-
+def make_action_message(risk_grade: str) -> str:
     if risk_grade == "high":
-        return (
-            f"{display_region} 주변은 현재 조건에서 야생동물 출몰 위험이 높게 예측됩니다. "
-            f"특히 {main_species} 출현 가능성에 주의하고, 야간 이동이나 단독 접근은 피하는 것이 좋습니다."
-        )
+        return "위험 수준이 높습니다. 현장 접근을 주의하고 주변 시설물과 농작물 피해 여부를 점검하세요."
 
     if risk_grade == "medium":
-        return (
-            f"{display_region} 주변은 현재 조건에서 야생동물 출몰 위험이 보통 수준으로 예측됩니다. "
-            f"반복 출현 여부를 확인하고 주변 환경을 주의 깊게 살펴보세요."
-        )
+        return "중간 수준의 위험입니다. 반복 출현 여부를 모니터링하고 필요 시 현장 확인을 진행하세요."
 
-    return (
-        f"{display_region} 주변은 현재 조건에서 야생동물 출몰 위험이 낮게 예측됩니다. "
-        f"다만 야생동물이 반복적으로 관측되는 경우 위험도가 달라질 수 있습니다."
-    )
+    return "위험 수준이 낮습니다. 일반적인 관찰 상태를 유지하세요."
 
 
-def get_actions(risk_grade: str) -> list[str]:
-    if risk_grade == "high":
-        return [
-            "야간 이동이나 단독 접근을 피하세요.",
-            "농장, 창고, 울타리, 음식물 보관 장소를 점검하세요.",
-            "야생동물을 발견하면 가까이 가지 말고 안전한 곳으로 이동하세요.",
-            "반복 출현하거나 위협이 느껴지면 관계 기관에 신고하세요.",
-        ]
+def make_risk_reasons(input_data: dict) -> list[str]:
+    reasons = []
 
-    if risk_grade == "medium":
-        return [
-            "주변을 주의 깊게 살피고 이동 경로를 확인하세요.",
-            "같은 장소에 반복해서 나타나는지 기록해두세요.",
-            "농작물이나 시설물 피해 가능성이 있는지 확인하세요.",
-        ]
+    if input_data.get("time_zone") == "night" or input_data.get("day") == "night":
+        reasons.append("야간 시간대 관측으로 인해 위험도가 상승했습니다.")
 
-    return [
-        "즉각적인 위험은 낮지만 관측 기록을 유지하세요.",
-        "야생동물에게 일부러 접근하지 마세요.",
-        "날씨나 시간대가 바뀌면 위험도가 달라질 수 있습니다.",
-    ]
+    species = input_data.get("species")
+    if species in ["멧돼지", "반달가슴곰"]:
+        reasons.append(f"{species}은 현장 접근 시 주의가 필요한 종입니다.")
 
+    object_count = to_int(input_data.get("object_count"))
+    if object_count >= 3:
+        reasons.append("동시에 관측된 객체 수가 많아 위험도가 상승했습니다.")
 
-def load_model_artifact():
-    if not MODEL_PATH.exists():
-        raise FileNotFoundError(
-            f"모델 파일이 없습니다: {MODEL_PATH}. "
-            f"python scripts\\create_area_risk_dataset.py 실행 후 "
-            f"python scripts\\train_area_risk_model.py 를 실행하세요."
-        )
+    max_bbox_area_ratio = to_float(input_data.get("max_bbox_area_ratio"))
+    if max_bbox_area_ratio >= 0.05:
+        reasons.append("객체가 화면에서 차지하는 비율이 높아 근접 관측 가능성이 있습니다.")
 
-    return joblib.load(MODEL_PATH)
+    nearest_roadkill_distance = to_float(input_data.get("nearest_roadkill_distance_km"), default=9999)
+    roadkill_count_10km = to_int(input_data.get("roadkill_count_within_10km"))
+    roadkill_weighted_score = to_float(input_data.get("roadkill_weighted_score"))
 
+    if nearest_roadkill_distance <= 10:
+        reasons.append("관측 지점 주변 10km 이내에 로드킬 다발 구간이 존재합니다.")
+    elif nearest_roadkill_distance <= 20:
+        reasons.append("관측 지점 주변 20km 이내에 로드킬 다발 구간이 존재합니다.")
 
-def normalize_input(input_data: dict) -> dict:
-    location = input_data.get("location") or input_data.get("area_type") or "unknown"
+    if roadkill_count_10km > 0:
+        reasons.append("주변 로드킬 발생건수가 위험도 산정에 반영되었습니다.")
 
-    return {
-        "region_name": str(input_data.get("region_name", "")).strip(),
-        "location": str(location).strip(),
-        "weather": str(input_data.get("weather", "unknown")).strip(),
-        "time_zone": str(input_data.get("time_zone", "unknown")).strip(),
-        "season": str(input_data.get("season", "unknown")).strip(),
-    }
+    if roadkill_weighted_score >= 10:
+        reasons.append("가까운 로드킬 다발 구간의 발생건수가 위험도 산정에 반영되었습니다.")
+
+    if not reasons:
+        reasons.append("입력된 관측 조건을 기준으로 위험도를 산정했습니다.")
+
+    return reasons
 
 
-def records_to_df(records: list[dict]) -> pd.DataFrame:
-    if not records:
-        return pd.DataFrame()
+def validate_input(input_data: dict):
+    missing_fields = []
 
-    return pd.DataFrame(records)
+    for field in REQUIRED_FIELDS:
+        value = input_data.get(field)
+        if value is None or value == "":
+            missing_fields.append(field)
 
-
-def select_profile(input_data: dict, profiles_df: pd.DataFrame) -> dict:
-    if profiles_df.empty:
-        return {
-            "historical_count": 0,
-            "species_diversity": 0,
-            "avg_object_count": 0,
-            "avg_max_bbox_area_ratio": 0,
-            "avg_avg_bbox_area_ratio": 0,
-            "main_risk_species": "unknown",
-        }
-
-    location = input_data["location"]
-    weather = input_data["weather"]
-    time_zone = input_data["time_zone"]
-    season = input_data["season"]
-
-    exact = profiles_df[
-        (profiles_df["location"] == location)
-        & (profiles_df["weather"] == weather)
-        & (profiles_df["time_zone"] == time_zone)
-        & (profiles_df["season"] == season)
-    ]
-
-    if not exact.empty:
-        return exact.sort_values("historical_count", ascending=False).iloc[0].to_dict()
-
-    location_time = profiles_df[
-        (profiles_df["location"] == location)
-        & (profiles_df["time_zone"] == time_zone)
-    ]
-
-    if not location_time.empty:
-        return make_fallback_profile(location_time, input_data)
-
-    location_only = profiles_df[profiles_df["location"] == location]
-
-    if not location_only.empty:
-        return make_fallback_profile(location_only, input_data)
-
-    return make_fallback_profile(profiles_df, input_data)
+    if missing_fields:
+        raise ValueError(f"필수 입력값이 누락되었습니다: {missing_fields}")
 
 
-def get_mode_value(series: pd.Series) -> str:
-    values = series.dropna().astype(str)
+def build_model_input(input_data: dict) -> pd.DataFrame:
+    validate_input(input_data)
 
-    if values.empty:
-        return "unknown"
-
-    mode_values = values.mode()
-
-    if mode_values.empty:
-        return values.iloc[0]
-
-    return mode_values.iloc[0]
-
-
-def make_fallback_profile(df: pd.DataFrame, input_data: dict) -> dict:
-    return {
-        "location": input_data["location"],
-        "weather": input_data["weather"],
-        "time_zone": input_data["time_zone"],
-        "season": input_data["season"],
-        "historical_count": int(df["historical_count"].sum()),
-        "species_diversity": int(df["main_risk_species"].nunique()),
-        "avg_object_count": float(df["avg_object_count"].mean()),
-        "avg_max_bbox_area_ratio": float(df["avg_max_bbox_area_ratio"].mean()),
-        "avg_avg_bbox_area_ratio": float(df["avg_avg_bbox_area_ratio"].mean()),
-        "main_risk_species": get_mode_value(df["main_risk_species"]),
-    }
-
-
-def make_feature_row(input_data: dict, profile: dict) -> pd.DataFrame:
     row = {
-        "location": input_data["location"],
-        "weather": input_data["weather"],
-        "time_zone": input_data["time_zone"],
-        "season": input_data["season"],
-        "main_risk_species": profile.get("main_risk_species", "unknown"),
-        "historical_count": profile.get("historical_count", 0),
-        "species_diversity": profile.get("species_diversity", 0),
-        "avg_object_count": profile.get("avg_object_count", 0),
-        "avg_max_bbox_area_ratio": profile.get("avg_max_bbox_area_ratio", 0),
-        "avg_avg_bbox_area_ratio": profile.get("avg_avg_bbox_area_ratio", 0),
+        "day": input_data.get("day"),
+        "camera_type": input_data.get("camera_type"),
+        "weather": input_data.get("weather"),
+        "location": input_data.get("location"),
+        "time_zone": input_data.get("time_zone"),
+        "season": input_data.get("season"),
+        "species": input_data.get("species"),
+        "object_count": to_int(input_data.get("object_count")),
+        "max_bbox_area_ratio": to_float(input_data.get("max_bbox_area_ratio")),
+        "avg_bbox_area_ratio": to_float(input_data.get("avg_bbox_area_ratio")),
     }
 
-    return pd.DataFrame([row])
+    for key, default_value in DEFAULT_ROADKILL_FEATURES.items():
+        row[key] = input_data.get(key, default_value)
+
+    for key in NUMERIC_FEATURES:
+        row[key] = to_float(row.get(key), default=0.0)
+
+    return pd.DataFrame([row], columns=MODEL_FEATURES)
 
 
 def predict_risk(input_data: dict) -> dict:
-    artifact = load_model_artifact()
-    normalized_input = normalize_input(input_data)
+    model = load_model()
+    model_input = build_model_input(input_data)
 
-    profiles_df = records_to_df(artifact.get("area_profiles", []))
-    profile = select_profile(normalized_input, profiles_df)
+    predicted_score = float(model.predict(model_input)[0])
+    predicted_score = round(max(0, min(predicted_score, 100)), 2)
 
-    feature_df = make_feature_row(normalized_input, profile)
+    predicted_grade = score_to_grade(predicted_score)
 
-    model = artifact["model"]
-    predicted_score = float(model.predict(feature_df)[0])
-    predicted_score = max(0, min(100, predicted_score))
-    predicted_score = round(predicted_score, 2)
-
-    risk_grade = score_to_grade(predicted_score)
-    main_species = profile.get("main_risk_species", "unknown")
-
-    metrics = artifact.get("metrics", {})
+    full_input = model_input.iloc[0].to_dict()
 
     return {
         "predicted_score": predicted_score,
-        "risk_score": predicted_score,
-        "risk_grade": risk_grade,
-        "risk_level": risk_grade,
-        "risk_grade_korean": grade_to_korean(risk_grade),
-        "model_type": artifact.get("model_type", "area_risk_regression"),
-        "region_name": normalized_input["region_name"],
-        "location": normalized_input["location"],
-        "weather": normalized_input["weather"],
-        "time_zone": normalized_input["time_zone"],
-        "season": normalized_input["season"],
-        "main_risk_species": main_species,
-        "historical_count": int(profile.get("historical_count", 0)),
-        "message": get_risk_message(
-            risk_grade,
-            normalized_input["region_name"],
-            normalized_input["location"],
-            main_species,
-        ),
-        "actions": get_actions(risk_grade),
-        "metrics": {
-            "mae": round(float(metrics.get("mae", 0)), 4),
-            "rmse": round(float(metrics.get("rmse", 0)), 4),
-            "r2": round(float(metrics.get("r2", 0)), 4),
-        },
-        "input": normalized_input,
-        "profile": {
-            "historical_count": int(profile.get("historical_count", 0)),
-            "species_diversity": int(profile.get("species_diversity", 0)),
-            "avg_object_count": round(float(profile.get("avg_object_count", 0)), 2),
-            "avg_max_bbox_area_ratio": round(float(profile.get("avg_max_bbox_area_ratio", 0)), 6),
-            "avg_avg_bbox_area_ratio": round(float(profile.get("avg_avg_bbox_area_ratio", 0)), 6),
+        "predicted_grade": predicted_grade,
+        "predicted_grade_ko": grade_to_korean(predicted_grade),
+        "risk_reasons": make_risk_reasons(full_input),
+        "action_message": make_action_message(predicted_grade),
+        "message": make_action_message(predicted_grade),
+        "roadkill_features": {
+            "nearest_roadkill_distance_km": full_input["nearest_roadkill_distance_km"],
+            "roadkill_count_within_5km": full_input["roadkill_count_within_5km"],
+            "roadkill_count_within_10km": full_input["roadkill_count_within_10km"],
+            "roadkill_count_within_20km": full_input["roadkill_count_within_20km"],
+            "roadkill_weighted_score": full_input["roadkill_weighted_score"],
+            "near_roadkill_hotspot": full_input["near_roadkill_hotspot"],
         },
     }
+
+
+def predict(input_data: dict) -> dict:
+    return predict_risk(input_data)
+
+
+def predict_risk_score(input_data: dict) -> dict:
+    return predict_risk(input_data)
